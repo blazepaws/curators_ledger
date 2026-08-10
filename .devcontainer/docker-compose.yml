@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: devdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: "postgresql://devuser:devpass@postgres:5432/devdb"
+      NODE_ENV: development
+      BATTLENET_CLIENT_ID: none
+      BATTLENET_CLIENT_SECRET: none
+      BATTLENET_ISSUER: https://eu.battle.net/oauth
+      TEST_USER_BATTLENET_ID: "12345678901234567890"
+      TEST_USER_BATTLENET_TAG: "test#0000"
+      AUTH_SECRET: "a9119268c8aaf4645fa7b58fa86279aa93f726780846795e1fd2e1c9557aaf66"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ..:/workspace:cached
+      - /workspace/node_modules
+    command: sleep infinity
+
+volumes:
+  postgres_dev_data:

@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           Int     @id @default(autoincrement())
+  battleNetId  String  @unique
+  battleNetTag String
+  region       String  @default("EU")
+  tasks        Task[]
+  taskBoard    TaskBoard[]
+  characters   Character[]
+}
+
+model Character {
+  userId  Int
+  name    String
+  realm   String
+  notes   String  @default("")
+  user    User    @relation(fields: [userId], references: [id])
+  tags    CharacterTag[]
+  tasks   Task[]
+
+  @@id([userId, name, realm])
+}
+
+model CharacterTag {
+  id             Int       @id @default(autoincrement())
+  character      Character @relation(fields: [userId, characterName, characterRealm], references: [userId, name, realm])
+  userId         Int
+  characterName  String
+  characterRealm String
+  tag            String
+}
+
+model Task {
+  id             Int        @id @default(autoincrement())
+  user           User       @relation(fields: [userId], references: [id])
+  userId         Int
+  name           String
+  lockout        String     @default("No lockout")
+  character      Character? @relation(fields: [userId, characterName, characterRealm], references: [userId, name, realm])
+  characterName  String?
+  characterRealm String?
+  description    String
+  deadline       DateTime?
+  unlocksAt      DateTime?
+  tags           TaskTag[]
+  taskBoard      TaskBoard?
+}
+
+model TaskTag {
+  id     Int    @id @default(autoincrement())
+  task   Task   @relation(fields: [taskId], references: [id])
+  taskId Int
+  tag    String
+}
+
+model TaskBoard {
+  id     Int    @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id])
+  task   Task   @relation(fields: [taskId], references: [id])
+  taskId Int @unique
+  userId Int
+  active Boolean @default(false)
+}

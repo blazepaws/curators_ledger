@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/* Map Tailwind v4 color utilities to the CSS variables defined below.
+   @theme inline prevents Tailwind from re-emitting the variables (avoiding
+   circular references); utilities like bg-surface use var(--color-surface). */
+@theme inline {
+	--color-foreground: var(--color-foreground);
+	--color-background: var(--color-background);
+	--color-surface: var(--color-surface);
+	--color-muted: var(--color-muted);
+	--color-border: var(--color-border);
+	--color-border-subtle: var(--color-border-subtle);
+	--color-accent: var(--color-accent);
+	--color-danger: var(--color-danger);
+}
+
+/* Define semantic color variables for light and dark themes.
+   Subtle World of Warcraft-inspired palette: warm parchment, armor gold,
+   muted leather/brown tones, and restrained dark mode gold highlights. */
+:root {
+	/* make background a touch lighter and surface pure white for better contrast */
+	--color-background: #6b572f; /* lighter parchment */
+	--color-surface: #ffffff; /* pure white surface for clearer panels */
+	--color-foreground: #2b1f0f; /* deep brown text */
+	--color-muted: #7b6a53; /* muted leather/brown */
+	--color-border: #e9dcb2; /* warm border */
+	--color-border-subtle: #e9dcb2; /* subtle shared line for cards/dividers */
+	--color-accent: #c59b3a; /* armor gold */
+	--color-danger: #8b1e1e; /* deep red */
+}
+
+/* Dark theme overrides (supports both .dark class and prefers-color-scheme) */
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-background: #1e2128; /* dark blue-tinted gray */
+		--color-surface: #252930; /* slightly lifted gray */
+		--color-foreground: #e8dfd0; /* warm parchment text */
+		--color-muted: #8a909a; /* gray with a hint of blue */
+		--color-border: #33373f; /* subtle gray border */
+		--color-border-subtle: #33373f; /* subtle shared line for cards/dividers */
+		--color-accent: #e6c86b; /* bright gold highlight */
+		--color-danger: #f06b6b; /* vivid red */
+	}
+}
+
+/* Base element styles use the semantic colors */
+html, body {
+	background-color: var(--color-background);
+	color: var(--color-foreground);
+}
+
+/* Provide utility classes for legacy places that use text-gray etc. */
+.text-foreground { color: var(--color-foreground) }
+.text-muted { color: var(--color-muted) }
+.bg-surface { background-color: var(--color-surface) }
+.border-theme { border-color: var(--color-border) }
+.border-subtle { border-color: var(--color-border-subtle) }
+.bg-accent { background-color: var(--color-accent) }
+.text-accent { color: var(--color-accent) }
+.text-danger { color: var(--color-danger) }
+
+
+

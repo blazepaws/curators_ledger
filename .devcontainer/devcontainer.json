@@ -1,0 +1,25 @@
+{
+  "name": "wow_collector_helper",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  //"postCreateCommand": "npm install && npm run prisma:generate",
+  "postCreateCommand": "npm install && npm run prisma:generate && npm run prisma:migrate:deploy && npm run prisma:seed",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "Prisma.prisma",
+        "cweijan.vscode-postgresql-client2",
+        "mtxr.sqltools"
+      ]
+    }
+  },
+  "forwardPorts": [3000],
+  "remoteEnv": {
+    "DATABASE_URL": "postgresql://devuser:devpass@postgres:5432/devdb"
+  }
+}

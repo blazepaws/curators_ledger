@@ -1,0 +1,31 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: produser
+      POSTGRES_PASSWORD: prodpass
+      POSTGRES_DB: proddb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  nextjs:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: "postgresql://produser:prodpass@postgres:5432/proddb"
+    ports:
+      - "3000:3000"
+    command: ["npm", "run"]
+    volumes:
+      - .:/workspace:cached
+      - /workspace/node_modules
+
+volumes:
+  postgres_data:

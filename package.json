@@ -1,0 +1,38 @@
+{
+  "name": "my-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:generate": "prisma generate",
+    "prisma:seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.9",
+    "dotenv": "^17.4.2",
+    "next": "16.3.0",
+    "next-auth": "^5.0.0-beta.17",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "@prisma/adapter-pg": "^7.9",
+    "pg": "^8.23",
+    "@uiw/react-md-editor": "^4.1",
+    "@uiw/react-markdown-preview": "^5.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "prisma": "^7.9",
+    "tailwindcss": "^4",
+    "typescript": "^6"
+  }
+}
