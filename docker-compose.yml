@@ -20,9 +20,10 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - curatorsledger
-      - proxy
-
+      curatorsledger:
+      proxy:
+        aliases:
+          - curatorsledger
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
