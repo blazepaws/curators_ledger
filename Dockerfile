@@ -28,16 +28,15 @@ RUN addgroup --system --gid 1001 nodejs \
     && adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
-
 # Next.js standalone server.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-
 # Static assets aren't included in the standalone directory.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Install only Prisma CLI for migrations.
 COPY package.json package-lock.json ./
 RUN npm install --omit=dev --no-save prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
 
