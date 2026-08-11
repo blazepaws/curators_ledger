@@ -46,8 +46,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 # Static assets aren't included in the standalone directory.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Install only Prisma CLI for migrations.
+COPY package.json package-lock.json ./
+RUN npm install --omit=dev --no-save prisma
+
 USER nextjs
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && exec node server.js"]
