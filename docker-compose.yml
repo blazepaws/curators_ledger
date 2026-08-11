@@ -11,6 +11,10 @@ services:
       PORT: 3000
       HOSTNAME: 0.0.0.0
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      BATTLENET_CLIENT_ID: ${BATTLENET_CLIENT_ID}
+      BATTLENET_CLIENT_SECRET: ${BATTLENET_CLIENT_SECRET}
+      BATTLENET_ISSUER: ${BATTLENET_ISSUER}
+      AUTH_SECRET: ${NEXTAUTH_SECRET}
     depends_on:
       postgres:
         condition: service_healthy
