@@ -10,25 +10,12 @@ interface SessionUser {
   battleNetId?: string
 }
 
-const battleNetClientId = process.env.BATTLENET_CLIENT_ID;
-if (!battleNetClientId) {
-  throw new Error("BATTLENET_CLIENT_ID environment variable is not set")
-}
-const battleNetClientSecret = process.env.BATTLENET_CLIENT_SECRET;
-if (!battleNetClientSecret) {
-  throw new Error("BATTLENET_CLIENT_SECRET environment variable is not set")
-}
-const battleNetIssuer = process.env.BATTLENET_ISSUER as BattleNetIssuer;
-if (!battleNetIssuer) {
-  throw new Error("BATTLENET_ISSUER environment variable is not set")
-}
-
 export const authOptions: NextAuthConfig = {
   providers: [
     BattleNetProvider({
-      clientId: battleNetClientId,
-      clientSecret: battleNetClientSecret,
-      issuer: battleNetIssuer,
+      clientId: process.env.BATTLENET_CLIENT_ID!,
+      clientSecret: process.env.BATTLENET_CLIENT_SECRET!,
+      issuer: process.env.BATTLENET_ISSUER! as BattleNetIssuer,
     }),
   ],
   callbacks: {
@@ -57,11 +44,6 @@ export const authOptions: NextAuthConfig = {
 }
 
 if (process.env.NODE_ENV === "development") {
-  const testUserBattleNetId = process.env.TEST_USER_BATTLENET_ID
-  if (!testUserBattleNetId) {
-    throw new Error("TEST_USER_BATTLENET_ID environment variable is not set")
-  }
-
   authOptions.providers.push(
     CredentialsProvider({
       id: "dev",
@@ -69,7 +51,7 @@ if (process.env.NODE_ENV === "development") {
       credentials: {},
       async authorize() {
         const testUser = (await prisma.user.findFirst({
-          where: { battleNetId: testUserBattleNetId },
+          where: { battleNetId: process.env.TEST_USER_BATTLENET_ID! },
         })) as { id: number; battleNetTag: string; battleNetId: string } | null
 
         if (!testUser) {
