@@ -3,6 +3,11 @@ node_modules
 .DS_Store
 .env
 .env.local
+.git
+.github
+Dockerfile
+docker-compose.yml
+README.md
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

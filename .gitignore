@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Personal and temporary files
+todo.txt
+
+# Certificates
+letsencrypt/

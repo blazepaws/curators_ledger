@@ -1,31 +1,46 @@
-version: "3.9"
 services:
-  postgres:
-    image: postgres:16
+
+  curatorsledger:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: curatorsledger:latest
     restart: unless-stopped
     environment:
-      POSTGRES_USER: produser
-      POSTGRES_PASSWORD: prodpass
-      POSTGRES_DB: proddb
-    ports:
-      - "5432:5432"
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - curatorsledger
+      - proxy
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
-  nextjs:
-    build:
-      context: .
-      dockerfile: .devcontainer/Dockerfile
-    depends_on:
-      - postgres
-    environment:
-      DATABASE_URL: "postgresql://produser:prodpass@postgres:5432/proddb"
-    ports:
-      - "3000:3000"
-    command: ["npm", "run"]
-    volumes:
-      - .:/workspace:cached
-      - /workspace/node_modules
+    networks:
+      - curatorsledger
 
 volumes:
   postgres_data:
+
+networks:
+  curatorsledger:
+    driver: bridge
+  proxy:
+    name: proxy
+    external: true
