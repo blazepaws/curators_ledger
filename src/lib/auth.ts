@@ -60,7 +60,9 @@ export const authOptions: NextAuthConfig = {
       console.log("token BEFORE:", token)
 
       // Again, pass our own ID down to the token, so we can eventually put it in the session.
-      token.id = user?.dbId;
+      if (user?.dbId) {
+        token.id = user.dbId;
+      }
 
       // Also put the bnet API access token in here.
       if (account?.provider === "battlenet") {
