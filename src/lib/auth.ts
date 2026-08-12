@@ -16,6 +16,7 @@ export const authOptions: NextAuthConfig = {
       clientId: process.env.BATTLENET_CLIENT_ID!,
       clientSecret: process.env.BATTLENET_CLIENT_SECRET!,
       issuer: process.env.BATTLENET_ISSUER! as BattleNetIssuer,
+      checks: ["state", "pkce"]
     }),
   ],
   callbacks: {
