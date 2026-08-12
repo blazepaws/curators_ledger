@@ -24,7 +24,7 @@ export const authOptions: NextAuthConfig = {
         // they have an account in our database. If they don't, we create one.
 
         const battleNetId = account?.providerAccountId;
-        const battleNetTag = (profile as any)?.battletag;
+        const battleNetTag = (profile as any)?.battle_tag;
 
         if (!battleNetId) {
           console.error("Battle.net account ID is missing.")
