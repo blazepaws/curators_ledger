@@ -22,13 +22,9 @@ export const authOptions: NextAuthConfig = {
   callbacks: {
 
     async signIn({ user, account }) {
-      console.log("=== SIGN IN CALLBACK ===")
-      console.log("user:", user)
-      console.log("account:", account)
       if (account?.provider === "battlenet") {
 
         if (!user.id) {
-          console.log("No user ID found, cannot upsert user in database.")
           return false
         }
 
@@ -72,13 +68,18 @@ export const authOptions: NextAuthConfig = {
     },
 
     async session({ session, token }: { session: Session; token: JWT & { battleNetTag?: string; battleNetId?: string } }) {
-      if (token?.sub && session.user) {
-        (session.user as SessionUser).id = token.sub;
-      }
 
       if (session.user) {
-        (session.user as SessionUser).battleNetTag = token.battleNetTag;
-        (session.user as SessionUser).battleNetId = token.battleNetId;
+        const sessionUser = session.user as SessionUser
+
+        if (token?.sub) {
+          sessionUser.id = token.sub;
+        }
+
+        if (session.user) {
+          sessionUser.battleNetTag = token.battleNetTag;
+          sessionUser.battleNetId = token.battleNetId;
+        }
       }
 
       return session
