@@ -20,29 +20,65 @@ export const authOptions: NextAuthConfig = {
     }),
   ],
   callbacks: {
+
+    async signIn({ user, account }) {
+      console.log("=== SIGN IN CALLBACK ===")
+      console.log("user:", user)
+      console.log("account:", account)
+      if (account?.provider === "battlenet") {
+
+        if (!user.id) {
+          console.log("No user ID found, cannot upsert user in database.")
+          return false
+        }
+
+        const battleNetId = user.id.toString()
+        const battleNetTag = user.name ?? ""
+        const issuer = process.env.BATTLENET_ISSUER ?? ""
+        const region = issuer.includes("eu.battle.net") ? "EU" : issuer.includes("kr.battle.net") ? "KR" : issuer.includes("tw.battle.net") ? "TW" : "US"
+
+        await prisma.user.upsert({
+          where: { battleNetId },
+          create: { battleNetId, battleNetTag, region },
+          update: { battleNetTag },
+        })
+      }
+
+      return true
+    },
+
     async jwt({ token, user }: { token: JWT & { battleNetTag?: string; battleNetId?: string }; user?: any }) {
 
       console.log("=== JWT CALLBACK ===")
       console.log("token BEFORE:", token)
       console.log("user:", user)
 
-      if (user) {
-        if (user.id) token.sub = user.id.toString()
-        if (user.battleNetTag) token.battleNetTag = user.battleNetTag
-        if (user.battleNetId) token.battleNetId = user.battleNetId
+      if (user?.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: {
+            battleNetId: user.id.toString(),
+          },
+        })
+
+        if (dbUser) {
+          token.sub = dbUser.id.toString()
+          token.battleNetId = dbUser.battleNetId
+          token.battleNetTag = dbUser.battleNetTag
+        }
       }
+
       console.log("token AFTER:", token)
       return token
     },
 
     async session({ session, token }: { session: Session; token: JWT & { battleNetTag?: string; battleNetId?: string } }) {
       if (token?.sub && session.user) {
-        ;(session.user as SessionUser).id = token.sub
+        (session.user as SessionUser).id = token.sub;
       }
 
       if (session.user) {
-        ;(session.user as SessionUser).battleNetTag = token.battleNetTag
-        ;(session.user as SessionUser).battleNetId = token.battleNetId
+        (session.user as SessionUser).battleNetTag = token.battleNetTag;
+        (session.user as SessionUser).battleNetId = token.battleNetId;
       }
 
       return session
