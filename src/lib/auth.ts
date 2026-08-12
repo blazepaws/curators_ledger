@@ -17,7 +17,6 @@ export const authOptions: NextAuthConfig = {
   callbacks: {
 
     async signIn({ user, account, profile }: { user: User & { dbId?: number }; account?: Account | null; profile?: Profile }) {
-      console.log("signIn callback called with user:", user, "account:", account, "profile:", profile)
 
       if (account?.provider === "battlenet" && user?.id) {
         // When a user signs in with Battle.net, we need to make sure
@@ -56,9 +55,6 @@ export const authOptions: NextAuthConfig = {
 
     async jwt({ token, account, user }: { token: JWT & { id?: number, bnetAccessToken?: string }; account?: Account | null; user: User & { dbId?: number } }) {
 
-      console.log("JWT callback called with token:", token, "user:", user)
-      console.log("token BEFORE:", token)
-
       // Again, pass our own ID down to the token, so we can eventually put it in the session.
       if (user?.dbId) {
         token.id = user.dbId;
@@ -69,7 +65,6 @@ export const authOptions: NextAuthConfig = {
         token.bnetAccessToken = account?.access_token;
       }
       
-      console.log("token AFTER:", token)
       return token
     },
 
