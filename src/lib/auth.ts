@@ -21,11 +21,17 @@ export const authOptions: NextAuthConfig = {
   ],
   callbacks: {
     async jwt({ token, user }: { token: JWT & { battleNetTag?: string; battleNetId?: string }; user?: any }) {
+
+      console.log("=== JWT CALLBACK ===")
+      console.log("token BEFORE:", token)
+      console.log("user:", user)
+
       if (user) {
         if (user.id) token.sub = user.id.toString()
         if (user.battleNetTag) token.battleNetTag = user.battleNetTag
         if (user.battleNetId) token.battleNetId = user.battleNetId
       }
+      console.log("token AFTER:", token)
       return token
     },
 
