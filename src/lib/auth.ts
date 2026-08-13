@@ -98,10 +98,11 @@ if (process.env.NODE_ENV === "development") {
           return null
         }
 
+        console.log()
         return {
-          id: testUser.id.toString(),
-          battleNetTag: testUser.battleNetTag,
-          battleNetId: testUser.battleNetId,
+          id: testUser.battleNetId,
+          dbId: testUser.id.toString(),
+          name: testUser.battleNetTag,
         }
       },
     })
