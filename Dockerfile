@@ -28,6 +28,7 @@ RUN addgroup --system --gid 1001 nodejs \
     && adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 # Next.js standalone server.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 # Static assets aren't included in the standalone directory.
