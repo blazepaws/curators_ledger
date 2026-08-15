@@ -14,29 +14,61 @@ async function Header() {
   const session = await auth()
 
   const accountLabel =
-    (session as any)?.user?.battleNetTag || (session as any)?.user?.name || (session as any)?.user?.battleNetId || "Account"
+    (session as any)?.user?.battleNetTag ||
+    (session as any)?.user?.name ||
+    (session as any)?.user?.battleNetId ||
+    "Account"
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-wow-panel border-wow-border">
-      <div className="mx-auto px-4 py-3 flex items-start justify-between">
-        {session ? (
-          <nav className="flex items-center space-x-4">
-            <Link href="/tasks" className="text-sm font-medium text-foreground hover:underline">Task Board</Link>
-            <Link href="/today" className="text-sm font-medium text-foreground hover:underline">Today</Link>
-            <Link href="/characters" className="text-sm font-medium text-foreground hover:underline">Characters</Link>
-          </nav>
-        ) : (
-          <div />
-        )}
+      <div className="mx-auto px-4 py-3 grid grid-cols-3 items-center">
+        {/* Left */}
+        <div>
+          {session ? (
+            <nav className="flex items-center space-x-4">
+              <Link
+                href="/tasks"
+                className="text-sm font-medium text-foreground hover:underline"
+              >
+                Task Board
+              </Link>
+              <Link
+                href="/today"
+                className="text-sm font-medium text-foreground hover:underline"
+              >
+                Today
+              </Link>
+              <Link
+                href="/characters"
+                className="text-sm font-medium text-foreground hover:underline"
+              >
+                Characters
+              </Link>
+            </nav>
+          ) : null}
+        </div>
 
-        <div className="flex items-center space-x-4">
+        {/* Center */}
+        <div className="text-center text-lg font-bold text-wow-bright-text">
+          Curator's Ledger
+        </div>
+
+        {/* Right */}
+        <div className="flex items-center justify-end space-x-4">
           {session ? (
             <>
               <SignOutButton />
-              <span className="text-sm font-medium text-wow-bright-text">{accountLabel}</span>
+              <span className="text-sm font-medium text-wow-bright-text">
+                {accountLabel}
+              </span>
             </>
           ) : (
-            <Link href="/login" className="ml-auto text-sm font-medium text-wow-bright-text hover:underline">Log in</Link>
+            <Link
+              href="/login"
+              className="text-sm font-medium text-wow-bright-text hover:underline"
+            >
+              Log in
+            </Link>
           )}
         </div>
       </div>
