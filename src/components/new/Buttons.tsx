@@ -1,6 +1,11 @@
 export function ButtonDone({ onClick }: { onClick?: () => void }) {
     return (
-        <button onClick={onClick} className="text-wow-green hover:text-white">
+        <button 
+            onClick={onClick} 
+            title="Done"
+            aria-label="Done"
+            className="text-wow-green hover:text-white"
+        >
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -17,7 +22,12 @@ export function ButtonDone({ onClick }: { onClick?: () => void }) {
 
 export function ButtonEdit({ onClick }: { onClick?: () => void }) {
     return (
-        <button onClick={onClick} className="text-wow-gold hover:text-white">
+        <button 
+            onClick={onClick} 
+            title="Edit"
+            aria-label="Edit"
+            className="text-wow-gold hover:text-white"
+        >
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -43,7 +53,12 @@ export function ButtonEdit({ onClick }: { onClick?: () => void }) {
 
 export function ButtonDelete({ onClick }: { onClick?: () => void }) {
     return (
-        <button onClick={onClick} className="text-wow-red hover:text-white">
+        <button 
+            onClick={onClick} 
+            title="Delete"
+            aria-label="Delete"
+            className="text-wow-red hover:text-white"
+        >
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -79,7 +94,12 @@ export function ButtonDelete({ onClick }: { onClick?: () => void }) {
 
 export function ButtonSkip({ onClick }: { onClick?: () => void }) {
     return (
-        <button onClick={onClick} className="text-wow-gold hover:text-white">
+        <button 
+            onClick={onClick} 
+            title="Ignore for today"
+            aria-label="Ignore for today"
+            className="text-wow-gold hover:text-white"
+        >
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
