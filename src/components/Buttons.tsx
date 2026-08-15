@@ -123,6 +123,54 @@ export function ButtonSkip({ onClick }: { onClick?: () => void }) {
     );
 }
 
+export function ButtonPlus({ onClick, disabled, hasShadow }: { onClick?: () => void, disabled?: boolean, hasShadow?: boolean }) {
+    return (
+        <button 
+            type="button" 
+            onClick={onClick} 
+            disabled={disabled} 
+            aria-label="Plus button" 
+            className={`
+                px-3 py-0.5
+                bg-wow-red
+                ${hasShadow ? 'shadow-[inset_0_2px_3px_rgba(100,100,100,0.45),inset_0_-5px_8px_rgba(20,20,20,0.65),0_3px_6px_rgba(0,0,0,0.7)]' : ''}
+                border-2 border-wow-border rounded-md
+                enabled:hover:brightness-125
+                text-wow-bright-text
+                disabled:opacity-60
+            `}
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                <path strokeLinecap="round" d="M12 5v14M5 12h14" />
+            </svg>
+        </button>
+    );
+}
+
+export function ButtonMinus({ onClick, disabled, hasShadow }: { onClick?: () => void, disabled?: boolean, hasShadow?: boolean }) {
+    return (
+        <button 
+            type="button" 
+            onClick={onClick} 
+            disabled={disabled} 
+            aria-label="Minus button" 
+            className={`
+                px-3 py-0.5
+                bg-wow-red
+                ${hasShadow ? 'shadow-[inset_0_2px_3px_rgba(100,100,100,0.45),inset_0_-5px_8px_rgba(20,20,20,0.65),0_3px_6px_rgba(0,0,0,0.7)]' : ''}
+                border-2 border-wow-border rounded-md
+                enabled:hover:brightness-125
+                text-wow-bright-text
+                disabled:opacity-60
+            `}
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                <path strokeLinecap="round" d="M5 12h14" />
+            </svg>
+        </button>
+    );
+}
+
 export function CloseButton({
     onClick,
 }: {
