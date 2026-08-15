@@ -54,14 +54,6 @@ function TaskSortingOptionsPanel({
                 />
             </div>
 
-            <div className="flex gap-2 justify-between">
-                <Checkbox
-                    label="Ignore Deadline"
-                    checked={options.ignoreDeadline ?? false}
-                    onChange={(e) => onChange({ ...options, ignoreDeadline: e })}
-                />
-            </div>
-
             <div className="flex items-baseline justify-between gap-2">
                 <label id="today-tag-filter-label" htmlFor="today-tag-filter">
                     Filter by tag
@@ -74,6 +66,14 @@ function TaskSortingOptionsPanel({
                     onChange={(tag) => onTagFilterChange(tag === ALL_TAGS_OPTION ? "" : tag)}
                     placeholder="Select a tag"
                     hasShadow={true}
+                />
+            </div>
+
+            <div className="flex gap-2 justify-between">
+                <Checkbox
+                    label="Ignore Deadline"
+                    checked={options.ignoreDeadline ?? false}
+                    onChange={(e) => onChange({ ...options, ignoreDeadline: e })}
                 />
             </div>
         </div>
