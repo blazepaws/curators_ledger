@@ -17,6 +17,12 @@ function normalizeTags(input: unknown) {
         .filter((t) => t.length > 0)
 }
 
+function addLockoutTag(tags: string[], lockout: LockoutMode): string[] {
+    const lockoutTag = `Lockout: ${lockout}`;
+    tags = tags.filter((t) => !t.startsWith("Lockout: "));
+    return [...tags, lockoutTag];
+}
+
 function validateTaskInput(data: TaskEditData & { unlocksAt?: string | null }): string | null {
     const name = typeof data.title === "string" ? data.title.trim() : ""
     if (!name) return "Task name is required"
@@ -126,6 +132,7 @@ export async function POST(req: Request) {
 
     const body: TaskEditData = await req.json()
     const { title, character, lockoutType, description, deadline, tags } = body
+    const normalizedTags = addLockoutTag(normalizeTags(tags), lockoutType as LockoutMode)
 
     // Parse the character name-realm string
     let characterName: string, characterRealm: string;
@@ -136,7 +143,7 @@ export async function POST(req: Request) {
     }
 
     // Validate the input
-    const validationError = validateTaskInput({ title, character, lockoutType, description, tags })
+    const validationError = validateTaskInput({ title, character, lockoutType, description, tags: normalizedTags })
     if (validationError) return NextResponse.json({ error: validationError }, { status: 400 })
 
     // Make sure the user hasn't exceeded the task limit before creating a new task.
@@ -150,8 +157,6 @@ export async function POST(req: Request) {
     if (!characterExists) {
         return NextResponse.json({ error: "Character does not exist for this account" }, { status: 400 })
     }
-
-    const normalizedTags = normalizeTags(tags)
 
     const created = await prisma.task.create({
         data: {

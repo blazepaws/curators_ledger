@@ -1,22 +1,19 @@
 "use client"
 
 import React, { useCallback, useMemo, useState } from "react"
-import { extractWowClassFromTags } from "@/lib/classColors"
-import TaskCard, { type TaskCardData } from "@/components/TaskCard"
-import TagsInput from "@/components/TagsInput"
-import { TASK_LIMITS } from "@/lib/limits"
-import NameRealmText from "@/components/NameRealmText"
+import { Button, ButtonDelete } from "@/components/new/Buttons"
+import { CharacterName } from "@/components/new/CharacterName"
+import { TagEditor } from "@/components/new/TagEditor"
+import { TaskCard } from "@/components/new/TaskCard"
+import { TextBox } from "@/components/new/Textbox"
+import { CHARACTER_LIMITS, TASK_LIMITS } from "@/lib/limits"
 import { isLockedForNow } from "@/lib/lockouts"
+import { DEFAULT_TAGS } from "@/lib/tags"
+import type { TaskData } from "@/types/task"
 
-type CharacterTask = {
-  id: number
-  name: string
-  lockout?: string | null
-  description: string
+type TaskResponse = Omit<TaskData, "deadline" | "unlocksAt"> & {
   deadline?: string | null
   unlocksAt?: string | null
-  tags: string[]
-  character: string
 }
 
 export type CharacterSummary = {
@@ -31,9 +28,8 @@ type CharacterCardProps = {
   character: CharacterSummary
   onCharacterUpdated: (updated: CharacterSummary) => void
   onCharacterDeleted: (label: string) => void
-  onEditTask: (task: CharacterTask) => void
+  onEditTask: (task: TaskData) => void
   onAddTask: (characterLabel: string) => void
-  tasksReloadSignal: number
 }
 
 export default function CharacterCard({
@@ -42,21 +38,17 @@ export default function CharacterCard({
   onCharacterDeleted,
   onEditTask,
   onAddTask,
-  tasksReloadSignal,
 }: CharacterCardProps) {
-  const notesRef = React.useRef<HTMLTextAreaElement | null>(null)
   const [expanded, setExpanded] = useState(false)
-  const [tasks, setTasks] = useState<CharacterTask[]>([])
+  const [tasks, setTasks] = useState<TaskData[]>([])
   const [tasksLoaded, setTasksLoaded] = useState(false)
   const [tasksLoading, setTasksLoading] = useState(false)
   const [notesDraft, setNotesDraft] = useState(character.notes)
-  const [tagsLineDraft, setTagsLineDraft] = useState(character.tags.join(", "))
+  const [tagsDraft, setTagsDraft] = useState(character.tags)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const parsedTags = useMemo(() => {
-    return tagsLineDraft.split(",").map((t) => t.trim()).filter(Boolean)
-  }, [tagsLineDraft])
+  const parsedTags = tagsDraft
 
   const tagsError = useMemo(() => {
     if (parsedTags.length > TASK_LIMITS.MAX_TAGS_PER_TASK) {
@@ -82,16 +74,11 @@ export default function CharacterCard({
     return parsedTags.some((tag, index) => tag !== baselineTags[index])
   }, [character.notes, character.tags, notesDraft, parsedTags])
 
-  function toTaskCardData(task: CharacterTask): TaskCardData {
+  function parseTask(task: TaskResponse): TaskData {
     return {
-      id: String(task.id),
-      character: task.character,
-      name: task.name,
-      description: task.description,
-      deadline: task.deadline ?? null,
-      unlocksAt: task.unlocksAt ?? null,
-      tags: task.tags,
-      wowClass: extractWowClassFromTags(task.tags),
+      ...task,
+      deadline: task.deadline ? new Date(task.deadline) : null,
+      unlocksAt: task.unlocksAt ? new Date(task.unlocksAt) : null,
     }
   }
 
@@ -100,11 +87,11 @@ export default function CharacterCard({
     setTasksLoading(true)
     setError(null)
     try {
-      const url = `/api/characters/${encodeURIComponent(character.name)}/${encodeURIComponent(character.realm)}/tasks`
+      const url = `/api/characters/${encodeURIComponent(character.label)}/tasks`
       const response = await fetch(url)
       if (!response.ok) throw new Error("Unable to load character tasks")
-      const data = await response.json()
-      setTasks(Array.isArray(data) ? data : [])
+      const data = await response.json() as TaskResponse[]
+      setTasks(Array.isArray(data) ? data.map(parseTask) : [])
       setTasksLoaded(true)
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unable to load character tasks"
@@ -174,18 +161,6 @@ export default function CharacterCard({
   }
 
   React.useEffect(() => {
-    setNotesDraft(character.notes)
-    setTagsLineDraft(character.tags.join(", "))
-  }, [character.notes, character.tags])
-
-  React.useEffect(() => {
-    const textarea = notesRef.current
-    if (!textarea) return
-    textarea.style.height = "auto"
-    textarea.style.height = `${textarea.scrollHeight}px`
-  }, [notesDraft])
-
-  React.useEffect(() => {
     if (!hasDraftChanges || notesError || tagsError || isSaving) return
     const timer = setTimeout(() => {
       void saveCharacterEdits()
@@ -193,100 +168,52 @@ export default function CharacterCard({
     return () => clearTimeout(timer)
   }, [hasDraftChanges, notesError, tagsError, isSaving, saveCharacterEdits])
 
-  React.useEffect(() => {
-    if (expanded) void loadTasks(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasksReloadSignal])
-
   return (
-    <article className="rounded border border-theme bg-surface p-4 textured-border">
+    <article className="w-full border border-wow-border bg-wow-ui-background p-4">
       <div className="mb-3 flex items-start justify-between gap-3">
         <h3>
-          <NameRealmText value={character.label} wowClass={extractWowClassFromTags(character.tags)} size="big" />
+          <CharacterName character={{ name: character.name, realm: character.realm }} size="lg" />
         </h3>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={deleteCharacter} disabled={isSaving} className="rounded border border-red-300 px-2 py-1 text-sm text-red-700 disabled:opacity-60">Remove</button>
+          <ButtonDelete onClick={deleteCharacter} />
         </div>
       </div>
 
       <div className="mb-3">
-        <label className="block text-xs font-medium uppercase tracking-wide text-muted">Notes</label>
-        <textarea
-          ref={notesRef}
+        <label className="mb-1 block text-sm text-wow-text">Notes</label>
+        <TextBox
           value={notesDraft}
-          onChange={(e) => setNotesDraft(e.target.value)}
-          rows={3}
-          className="mt-1 w-full resize-none overflow-hidden rounded border border-theme bg-surface px-2 py-1 text-sm text-foreground focus:border-white focus:outline-none focus:ring-0 focus-visible:outline-none"
+          onChange={setNotesDraft}
           placeholder="Character notes"
+          initialHeight={80}
+          maxCharacters={CHARACTER_LIMITS.MAX_DESCRIPTION_LENGTH}
         />
-        {notesError && <p className="mt-1 text-sm text-danger">{notesError}</p>}
+        {notesError && <p className="mt-1 text-sm text-wow-bright-red">{notesError}</p>}
       </div>
 
       <div className="mb-3">
-        <TagsInput
-          value={tagsLineDraft}
-          onChange={setTagsLineDraft}
-          maxTags={TASK_LIMITS.MAX_TAGS_PER_TASK}
-          maxTagLength={TASK_LIMITS.MAX_TAG_LENGTH}
-          error={tagsError || undefined}
-        />
+        <TagEditor tags={tagsDraft} suggestions={DEFAULT_TAGS} onChange={setTagsDraft} />
+        {tagsError && <p className="mt-1 text-sm text-wow-bright-red">{tagsError}</p>}
       </div>
 
-      {error && <p className="mb-2 text-sm text-danger">{error}</p>}
-      {!error && isSaving && <p className="mb-2 text-xs text-muted">Saving character updates...</p>}
+      {error && <p className="mb-2 text-sm text-wow-bright-red">{error}</p>}
+      {!error && isSaving && <p className="mb-2 text-xs text-wow-muted-text">Saving character updates...</p>}
 
       <div>
-        <div className="mb-2 flex items-center justify-between border-b border-subtle px-1 py-2">
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => { void toggleExpanded() }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault()
-                void toggleExpanded()
-              }
-            }}
-            className="flex cursor-pointer items-center"
-            aria-expanded={expanded}
-            aria-label={expanded ? "Collapse tasks" : "Expand tasks"}
-          >
-            <div className="mr-2 text-sm text-muted" aria-hidden>{expanded ? "▾" : "▸"}</div>
-            <div className="text-sm font-semibold uppercase tracking-wide text-foreground">Tasks</div>
-          </div>
-          <button
-            type="button"
-            onClick={() => onAddTask(character.label)}
-            className="rounded border border-theme px-2 py-1 text-sm text-foreground"
-          >
-            Add task
-          </button>
+        <div className="mb-3 flex items-center justify-between border-t border-wow-border pt-3">
+          <Button label={expanded ? "Hide Tasks" : "Show Tasks"} onClick={() => { void toggleExpanded() }} />
+          <Button label="Add Task" onClick={() => onAddTask(character.label)} />
         </div>
 
         {expanded && (
           <div className="flex flex-col gap-2">
-            {tasksLoading && <div className="text-sm text-muted">Loading tasks...</div>}
-            {!tasksLoading && tasks.length === 0 && <div className="text-sm text-muted">No tasks for this character.</div>}
+            {tasksLoading && <div className="text-sm text-wow-muted-text">Loading tasks...</div>}
+            {!tasksLoading && tasks.length === 0 && <div className="text-sm text-wow-muted-text">No tasks for this character.</div>}
             {!tasksLoading && tasks.map((task) => {
               const locked = isLockedForNow(task.unlocksAt)
-              const unlockLabel = locked && task.unlocksAt
-                ? new Date(task.unlocksAt).toLocaleString()
-                : null
               return (
                 <div key={task.id} className={locked ? "opacity-60" : ""}>
-                  <TaskCard
-                    task={toTaskCardData(task)}
-                    actions={[
-                      {
-                        key: "edit",
-                        title: "Edit task",
-                        ariaLabel: "edit",
-                        className: "rounded border border-theme px-2 py-1 text-sm text-foreground",
-                        icon: <span>Edit</span>,
-                        onClick: () => onEditTask(task),
-                      },
-                    ]}
-                  />
+                  <TaskCard task={task} options={{ displayEditButton: true }} onEdit={() => onEditTask(task)} />
                 </div>
               )
             })}

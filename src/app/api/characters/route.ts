@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import {  getSessionUserId } from "@/lib/auth"
-import { TASK_LIMITS } from "@/lib/limits"
+import { CHARACTER_LIMITS } from "@/lib/limits"
 import { parseNameRealmString } from "@/lib/character"
 import { extractWowClassFromTags } from "@/lib/classColors"
 
@@ -20,20 +20,20 @@ function validateCharacterPayload(payload: { name?: unknown; realm?: unknown; no
   if (!realm) return "Character realm is required"
 
   const label = `${name}-${realm}`
-  if (label.length > TASK_LIMITS.MAX_CHARACTER_NAME_REALM_LENGTH) {
-    return `Character name-realm can be at most ${TASK_LIMITS.MAX_CHARACTER_NAME_REALM_LENGTH} characters`
+  if (label.length > CHARACTER_LIMITS.MAX_CHARACTER_NAME_REALM_LENGTH) {
+    return `Character name-realm can be at most ${CHARACTER_LIMITS.MAX_CHARACTER_NAME_REALM_LENGTH} characters`
   }
 
-  if (typeof payload.notes === "string" && payload.notes.length > TASK_LIMITS.MAX_DESCRIPTION_LENGTH) {
-    return `Notes can be at most ${TASK_LIMITS.MAX_DESCRIPTION_LENGTH} characters`
+  if (typeof payload.notes === "string" && payload.notes.length > CHARACTER_LIMITS.MAX_DESCRIPTION_LENGTH) {
+    return `Notes can be at most ${CHARACTER_LIMITS.MAX_DESCRIPTION_LENGTH} characters`
   }
 
   const tags = normalizeTags(payload.tags)
-  if (tags.length > TASK_LIMITS.MAX_TAGS_PER_TASK) {
-    return `A character can have at most ${TASK_LIMITS.MAX_TAGS_PER_TASK} tags`
+  if (tags.length > CHARACTER_LIMITS.MAX_TAGS_PER_CHARACTER) {
+    return `A character can have at most ${CHARACTER_LIMITS.MAX_TAGS_PER_CHARACTER} tags`
   }
-  if (tags.some((tag) => tag.length > TASK_LIMITS.MAX_TAG_LENGTH)) {
-    return `Tags can be at most ${TASK_LIMITS.MAX_TAG_LENGTH} characters`
+  if (tags.some((tag) => tag.length > CHARACTER_LIMITS.MAX_TAG_LENGTH)) {
+    return `Tags can be at most ${CHARACTER_LIMITS.MAX_TAG_LENGTH} characters`
   }
 
   return null
@@ -135,16 +135,16 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "character must be name-realm" }, { status: 400 })
   }
 
-  if (typeof notes === "string" && notes.length > TASK_LIMITS.MAX_DESCRIPTION_LENGTH) {
-    return NextResponse.json({ error: `Notes can be at most ${TASK_LIMITS.MAX_DESCRIPTION_LENGTH} characters` }, { status: 400 })
+  if (typeof notes === "string" && notes.length > CHARACTER_LIMITS.MAX_DESCRIPTION_LENGTH) {
+    return NextResponse.json({ error: `Notes can be at most ${CHARACTER_LIMITS.MAX_DESCRIPTION_LENGTH} characters` }, { status: 400 })
   }
 
   const normalizedTags = normalizeTags(tags)
-  if (normalizedTags.length > TASK_LIMITS.MAX_TAGS_PER_TASK) {
-    return NextResponse.json({ error: `A character can have at most ${TASK_LIMITS.MAX_TAGS_PER_TASK} tags` }, { status: 400 })
+  if (normalizedTags.length > CHARACTER_LIMITS.MAX_TAGS_PER_CHARACTER) {
+    return NextResponse.json({ error: `A character can have at most ${CHARACTER_LIMITS.MAX_TAGS_PER_CHARACTER} tags` }, { status: 400 })
   }
-  if (normalizedTags.some((tag) => tag.length > TASK_LIMITS.MAX_TAG_LENGTH)) {
-    return NextResponse.json({ error: `Tags can be at most ${TASK_LIMITS.MAX_TAG_LENGTH} characters` }, { status: 400 })
+  if (normalizedTags.some((tag) => tag.length > CHARACTER_LIMITS.MAX_TAG_LENGTH)) {
+    return NextResponse.json({ error: `Tags can be at most ${CHARACTER_LIMITS.MAX_TAG_LENGTH} characters` }, { status: 400 })
   }
 
   const existing = await prisma.character.findUnique({

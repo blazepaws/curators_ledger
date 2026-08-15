@@ -7,16 +7,17 @@ import { extractWowClassFromTags } from "@/lib/classColors"
 import { queryCharacterExistsForUser, queryCharacterTags } from "@/lib/queries"
 
 // GET /api/characters/[name-realm]/tasks
-export async function GET(_: Request, { params }: { params: { namerealm: string } }) {
+export async function GET(_: Request, { params }: { params: Promise<{ namerealm: string }> }) {
 
     // Authenticate the user
     const uid = await getSessionUserId()
     if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 })
 
     // Parse the name-realm string
+    const { namerealm } = await params
     let name: string, realm: string;
     try {
-        ({ characterName: name, characterRealm: realm } = parseNameRealmString(params.namerealm))
+        ({ characterName: name, characterRealm: realm } = parseNameRealmString(namerealm))
     } catch (e) {
         return NextResponse.json({ error: "Character must be in name-realm format" }, { status: 400 })
     }
