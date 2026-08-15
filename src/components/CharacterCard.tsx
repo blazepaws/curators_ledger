@@ -69,10 +69,11 @@ export default function CharacterCard({
   }, [notesDraft])
 
   const hasDraftChanges = useMemo(() => {
-    const baselineTags = character.tags.map((tag) => tag.trim()).filter(Boolean)
+    const baselineTags = new Set(character.tags.map((tag) => tag.trim()).filter(Boolean))
+    const draftTags = new Set(parsedTags.map((tag) => tag.trim()).filter(Boolean))
     if (notesDraft !== character.notes) return true
-    if (parsedTags.length !== baselineTags.length) return true
-    return parsedTags.some((tag, index) => tag !== baselineTags[index])
+    if (draftTags.size !== baselineTags.size) return true
+    return Array.from(draftTags).some((tag) => !baselineTags.has(tag))
   }, [character.notes, character.tags, notesDraft, parsedTags])
 
   function parseTask(task: TaskResponse): TaskData {
@@ -162,12 +163,12 @@ export default function CharacterCard({
   }
 
   React.useEffect(() => {
-    if (!hasDraftChanges || notesError || tagsError || isSaving) return
+    if (!hasDraftChanges || notesError || tagsError) return
     const timer = setTimeout(() => {
       void saveCharacterEdits()
     }, 650)
     return () => clearTimeout(timer)
-  }, [hasDraftChanges, notesError, tagsError, isSaving, saveCharacterEdits])
+  }, [hasDraftChanges, notesError, tagsError, saveCharacterEdits])
 
   return (
     <article className="w-[600px] border border-wow-border bg-wow-ui-background p-4">
@@ -198,10 +199,9 @@ export default function CharacterCard({
       </div>
 
       {error && <p className="mb-2 text-sm text-wow-bright-red">{error}</p>}
-      {!error && isSaving && <p className="mb-2 text-xs text-wow-muted-text">Saving character updates...</p>}
 
       <div>
-        <div className="mb-3 flex items-center justify-between border-t border-wow-border pt-3">
+        <div className="mb-3 flex items-center justify-between pt-3">
           <Button label={expanded ? "Hide Tasks" : "Show Tasks"} onClick={() => { void toggleExpanded() }} />
           <Button label="Add Task" onClick={() => onAddTask(character.label)} />
         </div>
