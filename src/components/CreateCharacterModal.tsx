@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { TASK_LIMITS } from "@/lib/limits";
 import { DEFAULT_TAGS } from "@/lib/tags";
-import { useToast } from "../ToastProvider";
+import { useToast } from "./ToastProvider";
 import { Button, CloseButton } from "./Buttons";
 import { TagEditor } from "./TagEditor";
 import { TextBox } from "./Textbox";

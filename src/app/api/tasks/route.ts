@@ -5,7 +5,7 @@ import { TASK_LIMITS } from "@/lib/limits"
 import { LOCKOUT_OPTIONS, type LockoutMode } from "@/lib/lockouts"
 import { extractWowClassFromTags } from "@/lib/classColors"
 import { TaskData } from "@/types/task"
-import { TaskEditData } from "@/components/new/CreateTaskModal"
+import { TaskEditData } from "@/components/CreateTaskModal"
 import { queryCharacterExistsForUser, queryCharacterTags } from "@/lib/queries"
 import { parseNameRealmString } from "@/lib/character"
 

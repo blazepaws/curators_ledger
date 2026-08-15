@@ -1,84 +1,80 @@
-"use client"
+import { TaskData } from "@/types/task";
+import { ButtonDelete, ButtonDone, ButtonEdit, ButtonSkip } from "./Buttons";
+import { TagDisplay } from "./TagDisplay";
+import { CharacterName } from "./CharacterName";
 
-import React from "react"
-import MarkdownPreview from "@uiw/react-markdown-preview"
-import NameRealmText from "@/components/NameRealmText"
-
-export type TaskCardData = {
-  id: string
-  character: string
-  name: string
-  description: string
-  deadline?: string | null
-  unlocksAt?: string | null
-  tags: string[]
-  completed?: boolean
-  wowClass?: string | null
+export type TaskCardOptions = {
+    displayCharacter?: boolean;
+    displayCompleteButton?: boolean;
+    displayIgnoreButton?: boolean;
+    displayEditButton?: boolean;
+    displayDeleteButton?: boolean;
+    deadlineWarningThresholdDays?: number;
 }
 
-export type TaskCardAction = {
-  key: string
-  title: string
-  ariaLabel: string
-  className?: string
-  icon: React.ReactNode
-  onClick: (task: TaskCardData) => void
+function DeadlineDisplay({ deadline, warningThresholdDays = 7 }: { deadline?: Date | null, warningThresholdDays?: number }) {
+    if (!deadline) {
+        return (<span/>);
+    }
+    
+    const now = new Date();
+    const timeDiff = deadline.getTime() - now.getTime();
+    const daysUntilDeadline = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+    const isWarning = daysUntilDeadline <= warningThresholdDays;
+    
+    return (
+        <span className={`text-xs ${isWarning ? 'text-wow-bright-red' : 'text-wow-muted-text'}`}>
+            {deadline.toISOString().split('T')[0]}
+        </span>
+    );
 }
 
 type TaskCardProps = {
-  task: TaskCardData
-  actions?: TaskCardAction[]
-}
+    task: TaskData;
+    options?: TaskCardOptions;
+    onComplete?: () => void;
+    onIgnore?: () => void;
+    onEdit?: () => void;
+    onDelete?: () => void;
+};
 
-export default function TaskCard({ task, actions = [] }: TaskCardProps) {
-  const [isDarkMode, setIsDarkMode] = React.useState(false)
-
-  React.useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)")
-    const update = () => setIsDarkMode(media.matches)
-    update()
-    media.addEventListener("change", update)
-    return () => media.removeEventListener("change", update)
-  }, [])
-
-  return (
-    <div className="p-3 bg-surface border border-subtle rounded shadow-sm">
-      <div className="flex justify-between items-start gap-4">
-        <div className="min-w-0 flex-1">
-          <div className="font-medium text-foreground">{task.name}</div>
-          <div className="mt-0.5">
-            <NameRealmText value={task.character} wowClass={task.wowClass} size="small" />
-          </div>
-          <div className="task-markdown mt-1 overflow-hidden text-sm text-foreground" data-color-mode={isDarkMode ? "dark" : "light"}>
-            <MarkdownPreview
-              source={task.description || ""}
-              style={{ background: "transparent", color: "inherit", padding: 0 }}
-            />
-          </div>
-          {task.deadline && <div className="text-xs text-red-500 mt-1">Due: {new Date(task.deadline).toLocaleDateString()}</div>}
-          {task.unlocksAt && <div className="text-xs text-amber-600 mt-1">Unlocks: {new Date(task.unlocksAt).toLocaleString()}</div>}
-          <div className="flex gap-2 mt-2 flex-wrap">
-            {task.tags.map((tag) => (
-              <span key={tag} className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{tag}</span>
-            ))}
-          </div>
+export function TaskCard({ task, options, onComplete, onIgnore, onEdit, onDelete }: TaskCardProps) {
+    return (
+        <div className="group relative w-300 h-fit max-w-md border border-wow-border p-3 bg-wow-ui-background flex flex-col">
+            <div className="flex mb-2">
+                <div className="flex-grow pr-2">
+                    {/* Title */}
+                    <h2 className="font-semibold text-xl w-full">{task.title}</h2>
+                    
+                    {/* Character name (optional) */}
+                    {options?.displayCharacter && (
+                        <CharacterName character={task.character} size="xs" />
+                    )}
+                    {/* Task body */}
+                    <p className="mt-2">
+                        {task.description}
+                    </p>
+                </div>
+                {/* Controls. Hidden unless hovered. Floating on top of the layout. */}
+                <div className="
+                    flex flex-col items-end gap-2 
+                    opacity-0 transition group-hover:opacity-100
+                ">
+                    {options?.displayCompleteButton && <ButtonDone onClick={onComplete} />}
+                    {options?.displayIgnoreButton && <ButtonSkip onClick={onIgnore} />}
+                    {options?.displayEditButton && <ButtonEdit onClick={onEdit} />}
+                    {options?.displayDeleteButton && <ButtonDelete onClick={onDelete} />}
+                </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="flex items-end justify-between">
+                {/* Tags */}
+                <TagDisplay tags={task.tags} />
+                {/* Deadline */}
+                <DeadlineDisplay deadline={task.deadline} warningThresholdDays={options?.deadlineWarningThresholdDays ?? 7} />
+            </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          {actions.map((action) => (
-            <button
-              key={action.key}
-              type="button"
-              title={action.title}
-              aria-label={action.ariaLabel}
-              onClick={() => action.onClick(task)}
-              className={action.className || "text-foreground hover:opacity-80"}
-            >
-              {action.icon}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
+    )
 }

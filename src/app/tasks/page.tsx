@@ -1,57 +1,54 @@
 "use client"
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import NewTaskModal from "@/components/NewTaskModal"
-import { createActiveActions, createBacklogActions, IconPlus } from "@/components/TaskBoardActions"
-import { extractWowClassFromTags } from "@/lib/classColors"
 import TaskBoardFilters from "@/components/TaskBoardFilters"
-import TaskBacklog from "@/components/TaskBacklog"
-import TaskActive from "@/components/TaskActive"
-import type { CharacterOption } from "@/components/CharacterCombobox"
+import { Button } from "@/components/Buttons"
+import { CreateTaskModal, type TaskEditData } from "@/components/CreateTaskModal"
+import { TaskList } from "@/components/TaskList"
 import { useToast } from "@/components/ToastProvider"
 import { isLockedForNow } from "@/lib/lockouts"
+import { DEFAULT_TAGS } from "@/lib/tags"
+import type { TaskData } from "@/types/task"
 
-type Task = {
-  id: string
-  userId?: number
-  character: string
-  wowClass?: string | null
-  name: string
-  lockout?: string | null
-  description: string
+type TaskResponse = Omit<TaskData, "deadline" | "unlocksAt"> & {
   deadline?: string | null
   unlocksAt?: string | null
-  tags: string[]
-  completed?: boolean
-  taskBoard?: { active?: boolean } | null
 }
 
-type TaskPayload = {
-  name: string
-  lockout: string
-  character: string
-  description: string
-  deadline: string | null
-  tags: string[]
+type BoardState = { taskId: number, active: boolean }
+
+// The task board's active/backlog placement, joined in from a separate endpoint.
+type BoardTask = TaskData & { active: boolean }
+
+function parseTask(task: TaskResponse, activeByTaskId: Map<number, boolean>) {
+  return {
+    ...task,
+    active: activeByTaskId.get(task.id) ?? false,
+    deadline: task.deadline ? new Date(task.deadline) : null,
+    unlocksAt: task.unlocksAt ? new Date(task.unlocksAt) : null,
+  }
 }
 
-function areTaskListsEqual(a: Task[], b: Task[]) {
+function characterLabel(task: TaskData) {
+  return `${task.character.name}-${task.character.realm}`
+}
+
+function areTaskListsEqual(a: BoardTask[], b: BoardTask[]) {
   if (a === b) return true
   if (a.length !== b.length) return false
 
   for (let i = 0; i < a.length; i += 1) {
     const left = a[i]
     const right = b[i]
-    if (!left || !right) return false
 
     if (left.id !== right.id) return false
-    if (left.name !== right.name) return false
-    if (left.character !== right.character) return false
+    if (left.title !== right.title) return false
     if (left.description !== right.description) return false
-    if ((left.deadline ?? null) !== (right.deadline ?? null)) return false
-    if ((left.unlocksAt ?? null) !== (right.unlocksAt ?? null)) return false
-    if ((left.lockout ?? null) !== (right.lockout ?? null)) return false
-    if (!!left.taskBoard?.active !== !!right.taskBoard?.active) return false
+    if (characterLabel(left) !== characterLabel(right)) return false
+    if ((left.deadline?.getTime() ?? null) !== (right.deadline?.getTime() ?? null)) return false
+    if ((left.unlocksAt?.getTime() ?? null) !== (right.unlocksAt?.getTime() ?? null)) return false
+    if ((left.lockoutType ?? null) !== (right.lockoutType ?? null)) return false
+    if (!!left.active !== !!right.active) return false
 
     if (left.tags.length !== right.tags.length) return false
     for (let tagIndex = 0; tagIndex < left.tags.length; tagIndex += 1) {
@@ -62,45 +59,18 @@ function areTaskListsEqual(a: Task[], b: Task[]) {
   return true
 }
 
-function normalizeTask(task: any): Task {
-  const normalizedTags = Array.isArray(task.tags) ? task.tags.map((tag: any) => tag.tag || tag) : []
-  const characterTags = Array.isArray(task.character?.tags)
-    ? task.character.tags.map((tag: any) => tag.tag || tag)
-    : []
-  const characterLabel = typeof task.character === "string"
-    ? task.character
-    : task.character?.name && task.character?.realm
-      ? `${task.character.name}-${task.character.realm}`
-      : "Unknown-Unknown"
-
-  return {
-    id: String(task.id),
-    userId: task.userId,
-    character: characterLabel,
-    wowClass: extractWowClassFromTags(characterTags) ?? extractWowClassFromTags(normalizedTags),
-    name: task.name,
-    lockout: task.lockout ?? null,
-    description: task.description || "",
-    deadline: task.deadline ?? null,
-    unlocksAt: task.unlocksAt ?? null,
-    tags: normalizedTags,
-    taskBoard: task.taskBoard ?? null,
-  }
-}
-
 export default function Page() {
-  const [backlog, setBacklog] = useState<Task[]>([])
-  const [active, setActive] = useState<Task[]>([])
+  const [backlog, setBacklog] = useState<BoardTask[]>([])
+  const [active, setActive] = useState<BoardTask[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [characters, setCharacters] = useState<CharacterOption[]>([])
   const { pushToast } = useToast()
 
   const [q, setQ] = useState("")
   const [tagFilter, setTagFilter] = useState<string | "">("")
   const [characterFilter, setCharacterFilter] = useState<string | "">("")
   const [isComposerOpen, setComposerOpen] = useState(false)
-  const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [editingTask, setEditingTask] = useState<BoardTask | null>(null)
 
   const loadTasks = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent ?? false
@@ -109,14 +79,18 @@ export default function Page() {
       setError(null)
     }
     try {
-      const response = await fetch(`/api/tasks`)
-      if (!response.ok) throw new Error("Unable to load tasks")
-      const data = await response.json()
-      const tasks = (data as any[])
-        .map(normalizeTask)
-        .filter((task) => !isLockedForNow(task.unlocksAt))
-      const nextBacklog = tasks.filter((task) => !task.taskBoard?.active)
-      const nextActive = tasks.filter((task) => task.taskBoard?.active)
+      const [tasksResponse, boardResponse] = await Promise.all([
+        fetch(`/api/tasks`),
+        fetch(`/api/tasks/board`),
+      ])
+      if (!tasksResponse.ok) throw new Error("Unable to load tasks")
+      if (!boardResponse.ok) throw new Error("Unable to load task board state")
+      const data = await tasksResponse.json() as TaskResponse[]
+      const boardStates = await boardResponse.json() as BoardState[]
+      const activeByTaskId = new Map(boardStates.map((state) => [state.taskId, state.active]))
+      const tasks = data.map((task) => parseTask(task, activeByTaskId)).filter((task) => !isLockedForNow(task.unlocksAt))
+      const nextBacklog = tasks.filter((task) => !task.active)
+      const nextActive = tasks.filter((task) => task.active)
 
       setBacklog((prev) => (areTaskListsEqual(prev, nextBacklog) ? prev : nextBacklog))
       setActive((prev) => (areTaskListsEqual(prev, nextActive) ? prev : nextActive))
@@ -131,24 +105,9 @@ export default function Page() {
     }
   }, [])
 
-  const loadCharacters = useCallback(async () => {
-    try {
-      const response = await fetch("/api/characters")
-      if (!response.ok) throw new Error("Unable to load characters")
-      const data = await response.json()
-      setCharacters(Array.isArray(data) ? data : [])
-    } catch {
-      setCharacters([])
-    }
-  }, [])
-
   useEffect(() => {
     void loadTasks()
   }, [loadTasks])
-
-  useEffect(() => {
-    void loadCharacters()
-  }, [loadCharacters])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -162,25 +121,41 @@ export default function Page() {
   const allTags = useMemo(() => {
     const s = new Set<string>()
     backlog.forEach((t) => t.tags.forEach((tag) => s.add(tag)))
+    active.forEach((t) => t.tags.forEach((tag) => s.add(tag)))
     return Array.from(s)
-  }, [backlog])
+  }, [backlog, active])
+
+  const allCharacters = useMemo(() => {
+    const s = new Set<string>()
+    backlog.forEach((t) => s.add(characterLabel(t)))
+    active.forEach((t) => s.add(characterLabel(t)))
+    return Array.from(s)
+  }, [backlog, active])
 
   const filteredBacklog = useMemo(() => {
     return backlog.filter((t) => {
-      if (q && !`${t.name} ${t.description}`.toLowerCase().includes(q.toLowerCase())) return false
+      if (q && !`${t.title} ${t.description}`.toLowerCase().includes(q.toLowerCase())) return false
       if (tagFilter && !t.tags.includes(tagFilter)) return false
-      if (characterFilter && t.character !== characterFilter) return false
+      if (characterFilter && characterLabel(t) !== characterFilter) return false
       return true
     })
   }, [backlog, q, tagFilter, characterFilter])
 
-  function onDragStart(e: React.DragEvent, id: string) {
+  const orderedActive = useMemo(() => {
+    return [...active].sort((a, b) => characterLabel(a).localeCompare(characterLabel(b)))
+  }, [active])
+
+  function onDragStart(e: React.DragEvent, id: number) {
     e.dataTransfer.setData("text/task-id", String(id))
     e.dataTransfer.setData("text/plain", String(id))
     e.dataTransfer.effectAllowed = "move"
   }
 
-  async function persistTaskBoardActive(id: string, nextActive: boolean) {
+  function onDragOver(e: React.DragEvent) {
+    e.preventDefault()
+  }
+
+  async function persistTaskBoardActive(id: number, nextActive: boolean) {
     const response = await fetch("/api/tasks", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -193,14 +168,12 @@ export default function Page() {
     }
   }
 
-  async function moveTaskToColumn(id: string, nextActive: boolean) {
+  async function moveTaskToColumn(id: number, nextActive: boolean) {
     const sourceTask = backlog.find((t) => t.id === id) || active.find((t) => t.id === id)
     if (!sourceTask) return
+    if (!!sourceTask.active === nextActive) return
 
-    const isCurrentlyActive = !!sourceTask.taskBoard?.active
-    if (isCurrentlyActive === nextActive) return
-
-    const nextTask = { ...sourceTask, taskBoard: { ...(sourceTask.taskBoard || {}), active: nextActive } }
+    const nextTask = { ...sourceTask, active: nextActive }
 
     if (nextActive) {
       setBacklog((prev) => prev.filter((t) => t.id !== id))
@@ -224,21 +197,17 @@ export default function Page() {
     e.preventDefault()
     const id = e.dataTransfer.getData("text/task-id") || e.dataTransfer.getData("text/plain")
     if (!id) return
-    void moveTaskToColumn(id, true)
+    void moveTaskToColumn(Number(id), true)
   }
 
   function onDropToBacklog(e: React.DragEvent) {
     e.preventDefault()
     const id = e.dataTransfer.getData("text/task-id") || e.dataTransfer.getData("text/plain")
     if (!id) return
-    void moveTaskToColumn(id, false)
+    void moveTaskToColumn(Number(id), false)
   }
 
-  function onDragOver(e: React.DragEvent) {
-    e.preventDefault()
-  }
-
-  async function handleComplete(id: string) {
+  async function handleComplete(id: number) {
     setError(null)
     try {
       const response = await fetch(`/api/tasks/${id}/complete`, { method: "POST" })
@@ -262,10 +231,10 @@ export default function Page() {
     }
   }
 
-  async function deleteTask(id: string) {
+  async function deleteTask(id: number) {
     setError(null)
     try {
-      const response = await fetch(`/api/tasks/${encodeURIComponent(id)}`, { method: "DELETE" })
+      const response = await fetch(`/api/tasks/${id}`, { method: "DELETE" })
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
         throw new Error(data.error || "Unable to delete task")
@@ -282,21 +251,17 @@ export default function Page() {
     }
   }
 
-  function handleDeleteActive(id: string) {
-    void deleteTask(id)
-  }
-
-  function handleDeleteBacklog(id: string) {
-    void deleteTask(id)
-  }
-
-  function openComposer(task: Task | null) {
+  function openComposer(task: BoardTask | null) {
     setError(null)
     setEditingTask(task)
     setComposerOpen(true)
   }
 
-  async function handleSaveTask(payload: TaskPayload) {
+  function openEditTaskFrom(source: BoardTask[], id: number) {
+    openComposer(source.find((t) => t.id === id) ?? null)
+  }
+
+  async function handleSaveTask(payload: TaskEditData) {
     setError(null)
 
     try {
@@ -306,8 +271,6 @@ export default function Page() {
         body: JSON.stringify({
           id: editingTask?.id,
           ...payload,
-          deadline: payload.deadline ? new Date(payload.deadline).toISOString() : null,
-          unlocksAt: null,
         }),
       })
 
@@ -316,15 +279,7 @@ export default function Page() {
         throw new Error(data.error || "Unable to save task")
       }
 
-      const savedTask = normalizeTask(await response.json())
-      if (editingTask) {
-        setBacklog((prev) => prev.some((task) => task.id === savedTask.id) ? prev.map((task) => (task.id === savedTask.id ? savedTask : task)) : prev)
-        setActive((prev) => prev.some((task) => task.id === savedTask.id) ? prev.map((task) => (task.id === savedTask.id ? savedTask : task)) : prev)
-        pushToast({ type: "success", message: "Task updated" })
-      } else {
-        setBacklog((prev) => [savedTask, ...prev])
-        pushToast({ type: "success", message: "Task created" })
-      }
+      pushToast({ type: "success", message: editingTask ? "Task updated" : "Task created" })
       setComposerOpen(false)
       setEditingTask(null)
       await loadTasks()
@@ -336,90 +291,94 @@ export default function Page() {
     }
   }
 
-  const orderedActive = useMemo(() => {
-    return [...active].sort((a, b) => a.character.localeCompare(b.character))
-  }, [active])
-
-  const backlogActions = useMemo(() => createBacklogActions({
-    onDelete: handleDeleteBacklog,
-    onEdit: openComposer,
-  }), [handleDeleteBacklog, openComposer])
-
-  const activeActions = useMemo(() => createActiveActions({
-    onComplete: handleComplete,
-    onDelete: handleDeleteActive,
-    onEdit: openComposer,
-  }), [handleComplete, handleDeleteActive, openComposer])
-
   return (
-    <main className="mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-foreground">Task Board</h1>
-        <div className="flex gap-2">
-          <button onClick={() => openComposer(null)} className="inline-flex items-center gap-2 px-3 py-1 bg-accent text-black rounded">
-            <IconPlus className="w-4 h-4" />
-            New task
-          </button>
+    <div className="flex h-full w-full flex-col items-center overflow-hidden">
+      <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center px-6 mt-4">
+        <div />
+        <h1 className="m-4 text-2xl text-wow-gold">Task Board</h1>
+        <div className="flex justify-end gap-2">
+          <Button label="Add Task" onClick={() => openComposer(null)} />
         </div>
       </div>
 
-      {error && <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      <main className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col overflow-hidden p-6">
+        {error && <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-6">
-        <section onDrop={onDropToActive} onDragOver={onDragOver} className="flex min-h-0 flex-col overflow-hidden">
-          <h2 className="mb-4 px-4 text-base font-medium text-foreground">Today ({orderedActive.length})</h2>
-          <div className="min-h-0 flex-1">
-            <TaskActive
-              items={orderedActive}
-              loading={loading}
-              onDrop={onDropToActive}
-              onDragOver={onDragOver}
-              actionsForTask={() => activeActions}
-              dragStart={onDragStart}
-            />
-          </div>
-        </section>
+        <div className="grid min-h-0 flex-1 grid-cols-2 gap-6">
+          <section onDrop={onDropToActive} onDragOver={onDragOver} className="flex min-h-0 flex-col overflow-hidden items-center">
+            <div className="mx-auto flex min-h-0 max-w-md flex-1 flex-col items-start">
+              <h2 className="mb-4 text-base text-xl font-medium">Today ({orderedActive.length})</h2>
+              <div className="h-full min-h-0 overflow-y-auto scrollbar-none">
+                {loading ? (
+                  <div className="text-sm text-muted">Loading tasks…</div>
+                ) : orderedActive.length === 0 ? (
+                  <div className="text-sm text-muted">No active tasks. Drag items here from backlog.</div>
+                ) : (
+                  <TaskList
+                    tasks={orderedActive}
+                    options={{ displayCharacter: false, displayCompleteButton: true, displayEditButton: true, displayDeleteButton: true }}
+                    onComplete={handleComplete}
+                    onEdit={(id) => openEditTaskFrom(active, id)}
+                    onDelete={deleteTask}
+                    draggable
+                    onDragStart={onDragStart}
+                  />
+                )}
+              </div>
+            </div>
+          </section>
 
-        <aside onDrop={onDropToBacklog} onDragOver={onDragOver} className="flex min-h-0 flex-col overflow-hidden">
-          <h2 className="mb-4 px-4 text-base font-medium text-foreground">Backlog ({filteredBacklog.length})</h2>
-          <TaskBoardFilters
-            query={q}
-            onQueryChange={setQ}
-            tagFilter={tagFilter}
-            onTagFilterChange={setTagFilter}
-            characterFilter={characterFilter}
-            onCharacterFilterChange={setCharacterFilter}
-            allTags={allTags}
-            characters={characters}
-          />
-          <div className="min-h-0 flex-1">
-            <TaskBacklog
-              items={filteredBacklog}
-              loading={loading}
-              onDrop={onDropToBacklog}
-              onDragOver={onDragOver}
-              actionsForTask={() => backlogActions}
-              dragStart={onDragStart}
-            />
-          </div>
-        </aside>
-      </div>
+          <aside onDrop={onDropToBacklog} onDragOver={onDragOver} className="flex min-h-0 flex-col items-center">
+            <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col items-start">
+              <h2 className="mb-4 text-base text-xl font-medium">Backlog ({filteredBacklog.length})</h2>
+              <TaskBoardFilters
+                query={q}
+                onQueryChange={setQ}
+                tagFilter={tagFilter}
+                onTagFilterChange={setTagFilter}
+                characterFilter={characterFilter}
+                onCharacterFilterChange={setCharacterFilter}
+                allTags={allTags}
+                characters={allCharacters}
+              />
+              <div className="h-full min-h-0 overflow-y-auto scrollbar-none">
+                {loading ? (
+                  <div className="text-sm text-muted">Loading tasks…</div>
+                ) : filteredBacklog.length === 0 ? (
+                  <div className="text-sm text-muted">No tasks</div>
+                ) : (
+                  <TaskList
+                    tasks={filteredBacklog}
+                    options={{ displayCharacter: false, displayEditButton: true, displayDeleteButton: true }}
+                    onEdit={(id) => openEditTaskFrom(backlog, id)}
+                    onDelete={deleteTask}
+                    draggable
+                    onDragStart={onDragStart}
+                  />
+                )}
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
 
       {isComposerOpen && (
-        <NewTaskModal
-          open={isComposerOpen}
+        <CreateTaskModal
+          open={true}
+          isUpdating={editingTask !== null}
+          prefilledValues={editingTask ? {
+            character: characterLabel(editingTask),
+            title: editingTask.title,
+            description: editingTask.description,
+            tags: editingTask.tags,
+            deadline: editingTask.deadline,
+            lockoutType: editingTask.lockoutType ?? "No lockout",
+          } : undefined}
           onClose={() => setComposerOpen(false)}
           onSave={handleSaveTask}
-          prefill={editingTask ? {
-            name: editingTask.name,
-            character: editingTask.character,
-            description: editingTask.description,
-            deadline: editingTask.deadline ? new Date(editingTask.deadline).toISOString().slice(0,10) : undefined,
-            lockout: editingTask.lockout || undefined,
-            tags: editingTask.tags,
-          } : undefined}
+          availableTags={DEFAULT_TAGS}
         />
       )}
-    </main>
+    </div>
   )
 }

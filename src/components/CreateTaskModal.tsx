@@ -7,9 +7,10 @@ import { TextInput } from "./TextInput";
 import { DatePicker } from "./DatePicker";
 import { TextBox } from "./Textbox";
 import { TagEditor } from "./TagEditor";
-import { useToast } from "../ToastProvider";
-import { CharacterOption } from "../CharacterCombobox";
+import { useToast } from "./ToastProvider";
 import { TASK_LIMITS } from "@/lib/limits";
+import type { CharacterData } from "@/types/task";
+import { HorizontalField, VerticalField } from "./FormElementLayout";
 
 export type TaskEditData = {
     character: string;
@@ -29,39 +30,7 @@ type CreateTaskModalProps = {
     availableTags: readonly string[];
 };
 
-function HorizontalField({ id, label, hint, error, children }: { id: string; label: string | null; hint?: string | null; error?: string | null; children: React.ReactNode }) {
-    // If the element has no label, we want the input to take the full width of the container.
-    return (
-        <div className="flex gap-1 flex-col">
-            <div className={`
-                flex gap-1 justify-between items-baseline 
-                w-full ${label == null ? "[&>input]:w-full" : ""}
-            `}>
-                {label && <label id={`${id}-label`} htmlFor={id}>
-                    {label}
-                </label>}
-                {children}
-            </div>
-            {hint && <p className="text-wow-muted-text text-xs">{hint}</p>}
-            {error && <p className="text-wow-red text-xs">{error}</p>}
-        </div>
-    );
-}
-
-function VerticalField({ id, label, hint, error, children }: { id: string; label?: string | null; hint?: string | null; error?: string | null; children: React.ReactNode }) {
-    return (
-        <div className="flex flex-col gap-1">
-            {label && <label id={`${id}-label`} htmlFor={id}>
-                {label}
-            </label>}
-            {children}
-            {hint && <span className="text-wow-muted-text text-xs">{hint}</span>}
-            {error && <span className="text-wow-red text-xs">{error}</span>}
-        </div>
-    );
-}
-
-function makeNameRealmFromCharacterOption(character: CharacterOption): string {
+function makeNameRealmFromCharacterOption(character: CharacterData): string {
     return `${character.name}-${character.realm}`;
 }
 
@@ -81,7 +50,7 @@ export function CreateTaskModal({
     const [deadline, setDeadline] = useState(prefilledValues?.deadline ? prefilledValues.deadline : null);
     const [lockoutType, setLockoutType] = useState(prefilledValues?.lockoutType ?? "No lockout");
     // We need to load the character from the API to populate the options and validate.
-    const [characters, setCharacters] = useState<CharacterOption[]>([]);
+    const [characters, setCharacters] = useState<CharacterData[]>([]);
     const [charactersLoading, setCharactersLoading] = useState(false);
     const [charactersError, setCharactersError] = useState<string | null>(null);
     // Notifications
@@ -109,7 +78,7 @@ export function CreateTaskModal({
 
     const errors = useMemo(() => {
         const e: Record<string, string> = {}
-        const selectedExists = characters.some((c) => c.label === character.trim())
+        const selectedExists = characters.some((c) => makeNameRealmFromCharacterOption(c) === character.trim())
 
         if (!title.trim()) e.title = "Task name is required"
         if (title.length > TASK_LIMITS.MAX_NAME_LENGTH) e.title = `Maximum ${TASK_LIMITS.MAX_NAME_LENGTH} characters`

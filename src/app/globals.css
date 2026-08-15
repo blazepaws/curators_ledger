@@ -66,22 +66,3 @@ html, body {
 	color: var(--color-wow-text);
 }
 
-/* Provide utility classes for legacy places that use text-gray etc. */
-/*
-.text-foreground { color: var(--color-foreground) }
-.text-muted { color: var(--color-muted) }
-.bg-surface { background-color: var(--color-surface) }
-.border-theme { border-color: var(--color-border) }
-
-
-
-.border-subtle { border-color: var(--color-border-subtle) }
-.bg-accent { background-color: var(--color-accent) }
-
-
-
-.border-regular { border-color: var(--color-element-regular) }
-.border-danger { border-color: var(--color-danger) }
-.border-subtle { border-color: var(--color-border-subtle) }
-.border-accent { border-color: var(--color-accent) }
-*/

@@ -2,9 +2,10 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import CharacterCard, { type CharacterSummary } from "@/components/CharacterCard"
-import { Button } from "@/components/new/Buttons"
-import { CreateCharacterModal, type CharacterCreateData } from "@/components/new/CreateCharacterModal"
-import { CreateTaskModal, type TaskEditData } from "@/components/new/CreateTaskModal"
+import { Button } from "@/components/Buttons"
+import { CreateCharacterModal, type CharacterCreateData } from "@/components/CreateCharacterModal"
+import { CreateTaskModal, type TaskEditData } from "@/components/CreateTaskModal"
+import { SearchBar } from "@/components/SearchBar"
 import { DEFAULT_TAGS } from "@/lib/tags"
 import type { TaskData } from "@/types/task"
 import { useToast } from "@/components/ToastProvider"
@@ -149,12 +150,7 @@ export default function Page() {
       </div>
 
       <div className="mb-4 w-full max-w-md">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by character name or tag"
-          className="w-full rounded border border-theme bg-surface px-3 py-2 text-foreground"
-        />
+        <SearchBar value={query} onChange={setQuery} placeholder="Search by character name or tag" />
       </div>
 
       {loading ? (

@@ -11,6 +11,18 @@ export async function queryTaskForUser(userId: number, taskId: number) {
 }
 
 /**
+ * Query the task board active state for every task belonging to a user.
+ * @param userId - The ID of the user.
+ * @returns A promise that resolves to an array of { taskId, active } pairs.
+ */
+export async function queryTaskBoardStates(userId: number): Promise<{ taskId: number, active: boolean }[]> {
+    return prisma.taskBoard.findMany({
+        where: { userId },
+        select: { taskId: true, active: true },
+    })
+}
+
+/**
  * A query that checks if a character exists for a given user.
  * @param userId - The ID of the user.
  * @param characterName - The name of the character.

@@ -55,8 +55,34 @@ export const DEFAULT_TAGS = [
     "Profession: Cooking", 
     "Profession: Fishing",
     // Lockouts
-    "Daily",
-    "Weekly",
+    "Lockout: Daily",
+    "Lockout: Weekly",
+    "Lockout: No lockout",
+    "Lockout: Only once",
+    // Content type
+    "Raid",
+    "Dungeon",
+    "PvP",
+    // Collection type
+    "Transmog",
+    "Mount",
+    "Pet",
+    "Achievement",
+    "Toy",
+    "Decor",
+    "Reputation",
+    // Priority
+    "Priority: High",
+    "Priority: Medium",
+    "Priority: Low",
+    // Events
+    "Event: Darkmoon Faire",
+    "Event: Timewalking",
+    "Event: Love is in the Air",
+    "Event: Hallow's End",
+    "Event: Brewfest",
+    "Event: Midsummer Fire Festival",
+    "Event: Feast of Winter Veil",
 ] as const
 
 export type ImportantTag = typeof DEFAULT_TAGS[number]
