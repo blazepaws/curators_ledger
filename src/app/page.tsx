@@ -80,9 +80,9 @@ export default function Home() {
       <section className="border-y border-wow-border bg-wow-panel">
         <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 md:grid-cols-[1fr_auto] md:items-center">
           <div>
-            <p className="text-sm uppercase tracking-[0.18em] text-wow-gold">Choose your way in</p>
+            <p className="text-sm uppercase tracking-[0.18em] text-wow-gold">Get started</p>
             <h2 className="mt-3 text-3xl text-wow-bright-text">Your ledger is ready when you are.</h2>
-            <p className="mt-3 max-w-2xl leading-7 text-wow-muted-text">Use Battle.net for your account, or use the development login when working locally.</p>
+            <p className="mt-3 max-w-2xl leading-7 text-wow-muted-text">Use Battle.net to sign in and access your ledger.</p>
           </div>
           {!isAuthenticated && (
             <div className="flex flex-col gap-3 md:min-w-64">
