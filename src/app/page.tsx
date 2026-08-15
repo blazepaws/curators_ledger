@@ -1,6 +1,6 @@
 "use client"
 
-import { signIn } from "next-auth/react"
+import { signIn, useSession } from "next-auth/react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/Buttons"
@@ -21,6 +21,9 @@ function BattleNetButton({ label }: { label: string }) {
 }
 
 export default function Home() {
+  const { status } = useSession()
+  const isAuthenticated = status === "authenticated"
+
   return (
     <div className="h-full flex flex-col">
       <section className="relative border-b border-wow-border bg-wow-ui-background flex-grow flex justify-center">
@@ -36,9 +39,11 @@ export default function Home() {
               professions, dailies, limited time events, etc. 
               I hope this planner helps you stay organized on your way to 100%.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <BattleNetButton label="Enter with Battle.net" />
-            </div>
+            {!isAuthenticated && (
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <BattleNetButton label="Enter with Battle.net" />
+              </div>
+            )}
           </div>
 
           <div className="relative flex min-h-[28rem] items-end justify-center overflow-hidden md:min-h-[34rem]">
@@ -79,12 +84,14 @@ export default function Home() {
             <h2 className="mt-3 text-3xl text-wow-bright-text">Your ledger is ready when you are.</h2>
             <p className="mt-3 max-w-2xl leading-7 text-wow-muted-text">Use Battle.net for your account, or use the development login when working locally.</p>
           </div>
-          <div className="flex flex-col gap-3 md:min-w-64">
-            <BattleNetButton label="Sign in with Battle.net" />
-            {process.env.NODE_ENV === "development" && (
-              <Button label="Sign in as Dev User" onClick={() => signIn("dev", { redirectTo: "/tasks" })} />
-            )}
-          </div>
+          {!isAuthenticated && (
+            <div className="flex flex-col gap-3 md:min-w-64">
+              <BattleNetButton label="Sign in with Battle.net" />
+              {process.env.NODE_ENV === "development" && (
+                <Button label="Sign in as Dev User" onClick={() => signIn("dev", { redirectTo: "/tasks" })} />
+              )}
+            </div>
+          )}
         </div>
       </section>
 

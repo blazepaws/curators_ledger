@@ -49,9 +49,9 @@ async function Header() {
         </div>
 
         {/* Center */}
-        <div className="text-center text-lg font-bold text-wow-bright-text">
+        <Link href="/" className="text-center text-lg font-bold text-wow-bright-text hover:text-wow-gold">
           Curator's Ledger
-        </div>
+        </Link>
 
         {/* Right */}
         <div className="flex items-center justify-end space-x-4">
