@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { TaskData } from "@/types/task";
 import { ButtonDelete, ButtonDone, ButtonEdit, ButtonSkip } from "./Buttons";
 import { TagDisplay } from "./TagDisplay";
@@ -39,6 +40,43 @@ type TaskCardProps = {
     onDelete?: () => void;
 };
 
+function DescriptionWithLinks({ description }: { description: string }) {
+    const parts: ReactNode[] = [];
+    const urlPattern = /https?:\/\/[^\s]+/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    let key = 0;
+
+    while ((match = urlPattern.exec(description)) !== null) {
+        const rawUrl = match[0];
+        let url = rawUrl;
+        let trailingText = "";
+
+        while (/[),.!?:;]$/.test(url)) {
+            trailingText = url.slice(-1) + trailingText;
+            url = url.slice(0, -1);
+        }
+
+        parts.push(description.slice(lastIndex, match.index));
+        parts.push(
+            <a
+                key={`description-link-${key++}`}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-wow-orange underline hover:text-wow-bright-text"
+            >
+                {url}
+            </a>,
+        );
+        parts.push(trailingText);
+        lastIndex = match.index + rawUrl.length;
+    }
+
+    parts.push(description.slice(lastIndex));
+    return <>{parts}</>;
+}
+
 export function TaskCard({ task, options, onComplete, onIgnore, onEdit, onDelete }: TaskCardProps) {
     return (
         <div className="group relative w-300 h-fit max-w-md border border-wow-border p-3 bg-wow-ui-background flex flex-col">
@@ -53,7 +91,7 @@ export function TaskCard({ task, options, onComplete, onIgnore, onEdit, onDelete
                     )}
                     {/* Task body */}
                     <p className="mt-2">
-                        {task.description}
+                        <DescriptionWithLinks description={task.description} />
                     </p>
                 </div>
                 {/* Controls. Hidden unless hovered. Floating on top of the layout. */}
