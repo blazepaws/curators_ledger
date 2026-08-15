@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Curator's Ledger - A World of Warcraft planner for collectors
 
-## Getting Started
+This is a website for World of Warcraft collectors (or anyone with a serious schedule.) to stay organized.
+The project is written using the Next.js framework with a Postgres database as our data store.
 
-First, run the development server:
+## Contributing
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+This project comes with a devcontainer that you should be able to load up in VS Code with no issues.
+This will create a database with a pre-configured test user and an alternative login path to skip authentication.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+In the container, run `npm run dev` to start the nextjs host.
+The website will be available on port 3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Don't feel shy to contribute, anything helps! 
+Please use AI in moderation when contributing.
+I will not review your 50000 line slop request.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deployment
 
-## Learn More
+The docker-compose deployment in this repository is geared towards my personal deployment on my server.
+There's a proxy network an an nginx reverse proxy in front of the website that you can't see here.
+If you want to test the production deployment you will have to either recreate this or change the deployment.
 
-To learn more about Next.js, take a look at the following resources:
+## AI disclosure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This project contains AI generated code. Critical parts are hand-written and all code is human-verified.
+I try to keep it clean and organized. If you encounter bad code quality, please open an issue.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This code is licensed under GNU AGPL license. 
+All contributions are also licensed as such. See the LICENSE file for the full license.
