@@ -1,24 +1,9 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
-import { auth } from "@/lib/auth"
+import {  getSessionUserId } from "@/lib/auth"
 import { TASK_LIMITS } from "@/lib/limits"
-
-async function getSessionUserId() {
-  const session = await auth()
-  const uid = Number(session?.user?.id)
-  if (!session?.user?.id || Number.isNaN(uid)) return null
-  return uid
-}
-
-function parseCharacterLabel(label: string) {
-  const raw = label.trim()
-  const idx = raw.lastIndexOf("-")
-  if (idx <= 0 || idx === raw.length - 1) return null
-  const name = raw.slice(0, idx).trim()
-  const realm = raw.slice(idx + 1).trim()
-  if (!name || !realm) return null
-  return { name, realm }
-}
+import { parseNameRealmString } from "@/lib/character"
+import { extractWowClassFromTags } from "@/lib/classColors"
 
 function normalizeTags(input: unknown) {
   if (!Array.isArray(input)) return []
@@ -26,13 +11,6 @@ function normalizeTags(input: unknown) {
     .filter((t): t is string => typeof t === "string")
     .map((t) => t.trim())
     .filter((t) => t.length > 0)
-}
-
-function extractWowClassFromTags(tags: string[]) {
-  const classTag = tags.find((tag) => tag.startsWith("Class: "))
-  if (!classTag) return null
-  const value = classTag.slice("Class: ".length).trim()
-  return value || null
 }
 
 function validateCharacterPayload(payload: { name?: unknown; realm?: unknown; notes?: unknown; tags?: unknown }) {
@@ -150,8 +128,10 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "character is required" }, { status: 400 })
   }
 
-  const parsed = parseCharacterLabel(character)
-  if (!parsed) {
+  let characterName: string, characterRealm: string;
+  try {
+    ({ characterName, characterRealm } = parseNameRealmString(character))
+  } catch (e) {
     return NextResponse.json({ error: "character must be name-realm" }, { status: 400 })
   }
 
@@ -171,8 +151,8 @@ export async function PUT(req: Request) {
     where: {
       userId_name_realm: {
         userId: uid,
-        name: parsed.name,
-        realm: parsed.realm,
+        name: characterName,
+        realm: characterRealm,
       },
     },
     select: { userId: true },
@@ -183,8 +163,8 @@ export async function PUT(req: Request) {
     where: {
       userId_name_realm: {
         userId: uid,
-        name: parsed.name,
-        realm: parsed.realm,
+        name: characterName,
+        realm: characterRealm,
       },
     },
     data: {
@@ -211,66 +191,4 @@ export async function PUT(req: Request) {
   })
 }
 
-// DELETE /api/characters?character=name-realm
-export async function DELETE(req: Request) {
-  const uid = await getSessionUserId()
-  if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 })
 
-  const url = new URL(req.url)
-  const character = url.searchParams.get("character")
-  if (!character) return NextResponse.json({ error: "character is required" }, { status: 400 })
-
-  const parsed = parseCharacterLabel(character)
-  if (!parsed) return NextResponse.json({ error: "character must be name-realm" }, { status: 400 })
-
-  const existing = await prisma.character.findUnique({
-    where: {
-      userId_name_realm: {
-        userId: uid,
-        name: parsed.name,
-        realm: parsed.realm,
-      },
-    },
-    select: { userId: true },
-  })
-  if (!existing) return NextResponse.json({ error: "character not found" }, { status: 404 })
-
-  const characterTasks = await prisma.task.findMany({
-    where: {
-      userId: uid,
-      characterName: parsed.name,
-      characterRealm: parsed.realm,
-    },
-    select: { id: true },
-  })
-
-  const taskIds = characterTasks.map((t) => t.id)
-
-  await prisma.$transaction(async (tx) => {
-    if (taskIds.length > 0) {
-      await tx.taskBoard.deleteMany({ where: { taskId: { in: taskIds } } })
-      await tx.taskTag.deleteMany({ where: { taskId: { in: taskIds } } })
-      await tx.task.deleteMany({ where: { id: { in: taskIds } } })
-    }
-
-    await tx.characterTag.deleteMany({
-      where: {
-        userId: uid,
-        characterName: parsed.name,
-        characterRealm: parsed.realm,
-      },
-    })
-
-    await tx.character.delete({
-      where: {
-        userId_name_realm: {
-          userId: uid,
-          name: parsed.name,
-          realm: parsed.realm,
-        },
-      },
-    })
-  })
-
-  return NextResponse.json({ ok: true })
-}

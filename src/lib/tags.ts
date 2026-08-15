@@ -1,4 +1,4 @@
-export const IMPORTANT_TAGS = [
+export const DEFAULT_TAGS = [
     // Races
     "Race: Human", 
     "Race: Dwarf", 
@@ -54,6 +54,9 @@ export const IMPORTANT_TAGS = [
     "Profession: Tailoring", 
     "Profession: Cooking", 
     "Profession: Fishing",
+    // Lockouts
+    "Daily",
+    "Weekly",
 ] as const
 
-export type ImportantTag = typeof IMPORTANT_TAGS[number]
+export type ImportantTag = typeof DEFAULT_TAGS[number]

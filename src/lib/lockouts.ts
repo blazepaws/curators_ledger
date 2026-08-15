@@ -1,5 +1,12 @@
 export const LOCKOUT_OPTIONS = ["Daily", "Weekly", "No lockout", "Only once"] as const
 
+export enum Lockout {
+  Daily = "Daily",
+  Weekly = "Weekly",
+  NoLockout = "No lockout",
+  OnlyOnce = "Only once",
+}
+
 export type LockoutMode = (typeof LOCKOUT_OPTIONS)[number]
 
 type SupportedRegion = "EU" | "US"

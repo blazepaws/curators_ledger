@@ -241,11 +241,7 @@ export default function Page() {
   async function handleComplete(id: string) {
     setError(null)
     try {
-      const response = await fetch("/api/tasks", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, action: "complete" }),
-      })
+      const response = await fetch(`/api/tasks/${id}/complete`, { method: "POST" })
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
         throw new Error(data.error || "Unable to complete task")
@@ -269,9 +265,7 @@ export default function Page() {
   async function deleteTask(id: string) {
     setError(null)
     try {
-      const response = await fetch(`/api/tasks?id=${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      })
+      const response = await fetch(`/api/tasks/${encodeURIComponent(id)}`, { method: "DELETE" })
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
         throw new Error(data.error || "Unable to delete task")

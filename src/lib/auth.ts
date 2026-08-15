@@ -109,4 +109,11 @@ if (process.env.NODE_ENV === "development") {
   )
 }
 
+export async function getSessionUserId() {
+    const session = await auth()
+    const uid = Number(session?.user?.id)
+    if (!session?.user?.id || Number.isNaN(uid)) return null
+    return uid
+}
+
 export const { auth, handlers, signIn, signOut } = NextAuth(authOptions)

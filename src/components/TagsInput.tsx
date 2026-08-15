@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { IMPORTANT_TAGS } from "@/lib/tags"
+import { DEFAULT_TAGS } from "@/lib/tags"
 
 type Props = {
   value: string
@@ -16,7 +16,7 @@ export default function TagsInput({ value, onChange, maxTags, maxTagLength, erro
   const [input, setInput] = useState("")
   const [open, setOpen] = useState(false)
 
-  const suggestions = (IMPORTANT_TAGS as readonly string[]).filter(
+  const suggestions = (DEFAULT_TAGS as readonly string[]).filter(
     (t) => !tags.includes(t) && t.toLowerCase().includes(input.toLowerCase())
   )
 
@@ -42,7 +42,7 @@ export default function TagsInput({ value, onChange, maxTags, maxTagLength, erro
     if (e.key === "Backspace" && !input && tags.length) removeTag(tags[tags.length - 1])
   }
 
-  const isImportant = (tag: string) => (IMPORTANT_TAGS as readonly string[]).includes(tag)
+  const isImportant = (tag: string) => (DEFAULT_TAGS as readonly string[]).includes(tag)
 
   return (
     <div>
