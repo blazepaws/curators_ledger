@@ -10,6 +10,7 @@ import { CHARACTER_LIMITS, TASK_LIMITS } from "@/lib/limits"
 import { isLockedForNow } from "@/lib/lockouts"
 import { DEFAULT_TAGS } from "@/lib/tags"
 import type { TaskData } from "@/types/task"
+import { extractWowClassFromTags } from "@/lib/classColors"
 
 type TaskResponse = Omit<TaskData, "deadline" | "unlocksAt"> & {
   deadline?: string | null
@@ -169,10 +170,10 @@ export default function CharacterCard({
   }, [hasDraftChanges, notesError, tagsError, isSaving, saveCharacterEdits])
 
   return (
-    <article className="w-full border border-wow-border bg-wow-ui-background p-4">
+    <article className="w-[600px] border border-wow-border bg-wow-ui-background p-4">
       <div className="mb-3 flex items-start justify-between gap-3">
         <h3>
-          <CharacterName character={{ name: character.name, realm: character.realm }} size="lg" />
+          <CharacterName character={{ name: character.name, realm: character.realm, wowClass: extractWowClassFromTags(character.tags) }} size="lg" />
         </h3>
         <div className="flex items-center gap-2">
           <ButtonDelete onClick={deleteCharacter} />
