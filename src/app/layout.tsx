@@ -55,20 +55,13 @@ async function Header() {
 
         {/* Right */}
         <div className="flex items-center justify-end space-x-4">
-          {session ? (
+          {session && (
             <>
               <SignOutButton />
               <span className="text-sm font-medium text-wow-bright-text">
                 {accountLabel}
               </span>
             </>
-          ) : (
-            <Link
-              href="/login"
-              className="text-sm font-medium text-wow-bright-text hover:underline"
-            >
-              Log in
-            </Link>
           )}
         </div>
       </div>
