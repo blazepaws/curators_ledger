@@ -2,6 +2,7 @@
 
 import { Checkbox } from '@/components/Checkbox';
 import { Combobox } from '@/components/Combobox';
+import { SearchableCombobox } from '@/components/SearchableCombobox';
 import { Button } from '@/components/Buttons';
 import React, { useCallback, useEffect, useState } from 'react';
 import { TaskList } from '@/components/TaskList';
@@ -21,7 +22,21 @@ interface TaskSortingOptions {
     ignoreDeadline?: boolean;
 }
 
-function TaskSortingOptionsPanel({ options, onChange }: { options: TaskSortingOptions, onChange: (newOptions: TaskSortingOptions) => void }) {
+const ALL_TAGS_OPTION = "All tags";
+
+function TaskSortingOptionsPanel({
+    options,
+    onChange,
+    tagFilter,
+    tagOptions,
+    onTagFilterChange,
+}: {
+    options: TaskSortingOptions;
+    onChange: (newOptions: TaskSortingOptions) => void;
+    tagFilter: string;
+    tagOptions: string[];
+    onTagFilterChange: (tag: string) => void;
+}) {
     return (
         <div className="border border-wow-border p-3 bg-wow-ui-background w-full h-fit max-w-md flex flex-col gap-2">
             <div className="flex justify-between items-baseline gap-2">
@@ -44,6 +59,21 @@ function TaskSortingOptionsPanel({ options, onChange }: { options: TaskSortingOp
                     label="Ignore Deadline"
                     checked={options.ignoreDeadline ?? false}
                     onChange={(e) => onChange({ ...options, ignoreDeadline: e })}
+                />
+            </div>
+
+            <div className="flex items-baseline justify-between gap-2">
+                <label id="today-tag-filter-label" htmlFor="today-tag-filter">
+                    Filter by tag
+                </label>
+                <SearchableCombobox
+                    id="today-tag-filter"
+                    labelId="today-tag-filter-label"
+                    options={tagOptions}
+                    selectedOption={tagFilter || ALL_TAGS_OPTION}
+                    onChange={(tag) => onTagFilterChange(tag === ALL_TAGS_OPTION ? "" : tag)}
+                    placeholder="Select a tag"
+                    hasShadow={true}
                 />
             </div>
         </div>
@@ -192,9 +222,19 @@ export default function Page() {
         ignoreDeadline: false,
 
     });
+    const [tagFilter, setTagFilter] = React.useState("");
+    const tagOptions = React.useMemo(() => {
+        const tags = new Set<string>();
+        tasks.forEach((task) => task.tags.forEach((tag) => tags.add(tag)));
+        return [ALL_TAGS_OPTION, ...Array.from(tags).sort()];
+    }, [tasks]);
+    const filteredTasks = React.useMemo(() => {
+        if (!tagFilter) return tasks;
+        return tasks.filter((task) => task.tags.includes(tagFilter));
+    }, [tasks, tagFilter]);
     const sortedTasks = React.useMemo(() => {
-        return sortTasks(tasks, sortingOptions);
-    }, [tasks, sortingOptions]);
+        return sortTasks(filteredTasks, sortingOptions);
+    }, [filteredTasks, sortingOptions]);
 
     // Task edit/create 
     const [createTaskOpen, setCreateTaskOpen] = React.useState(false);
@@ -326,7 +366,13 @@ export default function Page() {
                     </div>
                 </div>
                 <main className="flex min-h-0 w-full flex-1 flex-col items-center justify-start gap-8 pt-8">
-                    <TaskSortingOptionsPanel options={sortingOptions} onChange={setSortingOptions}></TaskSortingOptionsPanel>
+                    <TaskSortingOptionsPanel
+                        options={sortingOptions}
+                        onChange={setSortingOptions}
+                        tagFilter={tagFilter}
+                        tagOptions={tagOptions}
+                        onTagFilterChange={setTagFilter}
+                    />
                     <TaskList
                         tasks={sortedTasks}
                         options={{
