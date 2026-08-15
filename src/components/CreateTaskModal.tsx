@@ -9,7 +9,7 @@ import { TextBox } from "./Textbox";
 import { TagEditor } from "./TagEditor";
 import { useToast } from "./ToastProvider";
 import { TASK_LIMITS } from "@/lib/limits";
-import type { CharacterData } from "@/types/task";
+import type { TaskCharacterData } from "@/types/task";
 import { HorizontalField, VerticalField } from "./FormElementLayout";
 
 export type TaskEditData = {
@@ -30,7 +30,7 @@ type CreateTaskModalProps = {
     availableTags: readonly string[];
 };
 
-function makeNameRealmFromCharacterOption(character: CharacterData): string {
+function makeNameRealmFromCharacterOption(character: TaskCharacterData): string {
     return `${character.name}-${character.realm}`;
 }
 
@@ -50,7 +50,7 @@ export function CreateTaskModal({
     const [deadline, setDeadline] = useState(prefilledValues?.deadline ? prefilledValues.deadline : null);
     const [lockoutType, setLockoutType] = useState(prefilledValues?.lockoutType ?? "No lockout");
     // We need to load the character from the API to populate the options and validate.
-    const [characters, setCharacters] = useState<CharacterData[]>([]);
+    const [characters, setCharacters] = useState<TaskCharacterData[]>([]);
     const [charactersLoading, setCharactersLoading] = useState(false);
     const [charactersError, setCharactersError] = useState<string | null>(null);
     // Notifications

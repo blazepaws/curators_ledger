@@ -1,8 +1,27 @@
 import { getSessionUserId } from "@/lib/auth"
 import { parseNameRealmString } from "@/lib/character"
-import { queryCharacterExistsForUser } from "@/lib/queries"
+import { queryCharacterExistsForUser, queryCharacterForUser } from "@/lib/queries"
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import type { CharacterData } from "@/types/character"
+
+export async function GET(_: Request, { params }: { params: Promise<{ namerealm: string }> }) {
+    const uid = await getSessionUserId()
+    if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 })
+
+    let characterName: string, characterRealm: string
+    try {
+        ({ characterName, characterRealm } = parseNameRealmString((await params).namerealm))
+    } catch {
+        return NextResponse.json({ error: "character must be name-realm" }, { status: 400 })
+    }
+
+    const character = await queryCharacterForUser(uid, characterName, characterRealm)
+    if (!character) return NextResponse.json({ error: "character not found" }, { status: 404 })
+
+    const characterData: CharacterData = character
+    return NextResponse.json(characterData)
+}
 
 
 /**
@@ -22,7 +41,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ namer
     let characterName: string, characterRealm: string;
     try {
         ({ characterName, characterRealm } = parseNameRealmString((await params).namerealm))
-    } catch (e) {
+    } catch {
         return NextResponse.json({ error: "character must be name-realm" }, { status: 400 })
     }
 

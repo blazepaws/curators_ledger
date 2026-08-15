@@ -1,5 +1,5 @@
 
-export type CharacterData = {
+export type TaskCharacterData = {
     name: string;
     realm: string;
     wowClass?: string | null;
@@ -7,7 +7,7 @@ export type CharacterData = {
 
 export type TaskData = {
   id: number;
-  character: CharacterData;
+  character: TaskCharacterData;
   title: string;
   description: string;
   tags: string[];

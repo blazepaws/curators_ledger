@@ -1,4 +1,5 @@
 import prisma from "./prisma"
+import type { CharacterData } from "@/types/character"
 
 /**
  * Query a task owned by a user, including the lockout needed when completing it.
@@ -42,6 +43,37 @@ export async function queryCharacterExistsForUser(userId: number, characterName:
     })
 
     return !!character
+}
+
+/**
+ * Query the complete character details needed by character tooltips.
+ * @returns The canonical CharacterData record, or null when it is not owned by the user.
+ */
+export async function queryCharacterForUser(userId: number, characterName: string, characterRealm: string): Promise<CharacterData | null> {
+    const character = await prisma.character.findUnique({
+        where: {
+            userId_name_realm: {
+                userId,
+                name: characterName,
+                realm: characterRealm,
+            },
+        },
+        include: {
+            tags: {
+                select: { tag: true },
+                orderBy: { tag: "asc" },
+            },
+        },
+    })
+
+    if (!character) return null
+
+    return {
+        name: character.name,
+        realm: character.realm,
+        notes: character.notes,
+        tags: character.tags.map((tag) => tag.tag),
+    }
 }
 
 /**
