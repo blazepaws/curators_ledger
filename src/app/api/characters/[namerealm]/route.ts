@@ -12,7 +12,7 @@ import prisma from "@/lib/prisma"
  * @param params Route parameters containing the name-realm string.
  * @returns Only an HTTP 200 code on success and JSON on failure.
  */
-export async function DELETE(req: Request, { params }: { params: { namerealm: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ namerealm: string }> }) {
 
     // Authenticate the user
     const uid = await getSessionUserId()
@@ -21,7 +21,7 @@ export async function DELETE(req: Request, { params }: { params: { namerealm: st
     // Parse the name-realm string from the route parameters
     let characterName: string, characterRealm: string;
     try {
-        ({ characterName, characterRealm } = parseNameRealmString(params.namerealm))
+        ({ characterName, characterRealm } = parseNameRealmString((await params).namerealm))
     } catch (e) {
         return NextResponse.json({ error: "character must be name-realm" }, { status: 400 })
     }

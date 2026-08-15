@@ -10,14 +10,14 @@ import { parseNameRealmString } from "@/lib/character"
  * @param params The route parameters.
  * @returns A JSON response containing the list of tags.    
  */
-export async function GET(req: Request, { params }: { params: { namerealm: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ namerealm: string }> }) {
 
     // Authenticate the user
     const uid = await getSessionUserId()
     if (!uid) return NextResponse.json({ error: "unauthorized" }, { status: 401 })
 
     // Parse the name-realm string
-    const parsed = parseNameRealmString(params.namerealm)
+    const parsed = parseNameRealmString((await params).namerealm)
     if (!parsed.characterName || !parsed.characterRealm) {
         return NextResponse.json({ error: "Character must be in name-realm format" }, { status: 400 })
     }
