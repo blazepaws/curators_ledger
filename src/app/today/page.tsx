@@ -15,14 +15,22 @@ import { useToast } from '@/components/ToastProvider';
 enum TaskSortingMethod {
     DailiesAndWeeklies = "Dailies and Weeklies",
     Deadline = "Deadline",
+    Priority = "Priority",
 }
 
 interface TaskSortingOptions {
     sortingMethod: TaskSortingMethod;
     ignoreDeadline?: boolean;
+    ignorePriority?: boolean;
 }
 
 const ALL_TAGS_OPTION = "All tags";
+const PRIORITY_TAGS = DEFAULT_TAGS.filter((tag) => tag.startsWith("Priority: "));
+
+function getPriorityRank(task: TaskData): number {
+    const priorityTag = task.tags.find((tag) => PRIORITY_TAGS.includes(tag as typeof PRIORITY_TAGS[number]));
+    return priorityTag ? PRIORITY_TAGS.indexOf(priorityTag as typeof PRIORITY_TAGS[number]) : Infinity;
+}
 
 function TaskSortingOptionsPanel({
     options,
@@ -69,11 +77,16 @@ function TaskSortingOptionsPanel({
                 />
             </div>
 
-            <div className="flex gap-2 justify-between">
+            <div className="flex gap-4 justify-start">
                 <Checkbox
                     label="Ignore Deadline"
                     checked={options.ignoreDeadline ?? false}
                     onChange={(e) => onChange({ ...options, ignoreDeadline: e })}
+                />
+                <Checkbox
+                    label="Ignore Priority"
+                    checked={options.ignorePriority ?? false}
+                    onChange={(e) => onChange({ ...options, ignorePriority: e })}
                 />
             </div>
         </div>
@@ -89,14 +102,24 @@ function sortTasks(tasks: TaskData[], options: TaskSortingOptions): TaskData[] {
             return [...tasks].sort((a, b) => {
                 // 1. Prioritize Daily / Weekly tasks.
                 // Daily and Weekly get the same priority here.
-                const aPriority = a.tags.some(tag => tag === "Daily" || tag === "Weekly" || tag === "Repeatable") ? 0 : 1;
-                const bPriority = b.tags.some(tag => tag === "Daily" || tag === "Weekly" || tag === "Repeatable") ? 0 : 1;
+                const aPriority = a.tags.some(tag => tag === "Lockout: Daily" || tag === "Lockout: Weekly" || tag === "Repeatable") ? 0 : 1;
+                const bPriority = b.tags.some(tag => tag === "Lockout: Daily" || tag === "Lockout: Weekly" || tag === "Repeatable") ? 0 : 1;
 
                 if (aPriority !== bPriority) {
                     return aPriority - bPriority;
                 }
 
-                // 2. Earlier deadlines first.
+                // 2. Higher configured priorities first; tasks without a priority go last.
+                if (!options.ignorePriority) {
+                    const aLabelPriority = getPriorityRank(a);
+                    const bLabelPriority = getPriorityRank(b);
+
+                    if (aLabelPriority !== bLabelPriority) {
+                        return aLabelPriority - bLabelPriority;
+                    }
+                }
+
+                // 3. Earlier deadlines first.
                 // Tasks without a deadline go last.
                 if (!options.ignoreDeadline) {
                     const aDeadline = a.deadline?.getTime() ?? Infinity;
@@ -107,14 +130,14 @@ function sortTasks(tasks: TaskData[], options: TaskSortingOptions): TaskData[] {
                     }
                 }
 
-                // 3. Keep characters together where possible.
+                // 4. Keep characters together where possible.
                 const aCharacter = `${a.character.realm}:${a.character.name}`.toLowerCase();
                 const bCharacter = `${b.character.realm}:${b.character.name}`.toLowerCase();
                 if (aCharacter !== bCharacter) {
                     return aCharacter.localeCompare(bCharacter);
                 }
 
-                // 4. Finally, sort by task ID for consistent ordering of equally important tasks.
+                // 5. Finally, sort by task ID for consistent ordering of equally important tasks.
                 return a.id - b.id;
             });
         case TaskSortingMethod.Deadline:
@@ -138,6 +161,36 @@ function sortTasks(tasks: TaskData[], options: TaskSortingOptions): TaskData[] {
                 }
 
                 // 3. Finally, sort by task ID for consistent ordering of equally important tasks.
+                return a.id - b.id;
+            });
+        case TaskSortingMethod.Priority:
+            return [...tasks].sort((a, b) => {
+                // 1. Higher configured priorities first; tasks without a priority go last.
+                const aPriority = getPriorityRank(a);
+                const bPriority = getPriorityRank(b);
+
+                if (!options.ignorePriority && aPriority !== bPriority) {
+                    return aPriority - bPriority;
+                }
+
+                // 2. Earlier deadlines first. Tasks without a deadline go last.
+                if (!options.ignoreDeadline) {
+                    const aDeadline = a.deadline?.getTime() ?? Infinity;
+                    const bDeadline = b.deadline?.getTime() ?? Infinity;
+
+                    if (aDeadline !== bDeadline) {
+                        return aDeadline - bDeadline;
+                    }
+                }
+
+                // 3. Keep characters together where possible.
+                const aCharacter = `${a.character.realm}:${a.character.name}`.toLowerCase();
+                const bCharacter = `${b.character.realm}:${b.character.name}`.toLowerCase();
+                if (aCharacter !== bCharacter) {
+                    return aCharacter.localeCompare(bCharacter);
+                }
+
+                // 4. Sort equivalent tasks consistently.
                 return a.id - b.id;
             });
         default:
@@ -220,6 +273,7 @@ export default function Page() {
     let [sortingOptions, setSortingOptions] = React.useState<TaskSortingOptions>({
         sortingMethod: TaskSortingMethod.DailiesAndWeeklies,
         ignoreDeadline: false,
+        ignorePriority: false,
 
     });
     const [tagFilter, setTagFilter] = React.useState("");
