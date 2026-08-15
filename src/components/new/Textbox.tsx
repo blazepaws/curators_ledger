@@ -1,4 +1,4 @@
-import { useId, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 
 export function TextBox({
     id,
@@ -29,13 +29,21 @@ export function TextBox({
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     id = id ?? useId();
 
-    function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-        const textarea = e.currentTarget;
-        onChange(textarea.value);
+    function resizeTextarea() {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
 
         // Reset first so it can shrink when text is removed.
         textarea.style.height = "auto";
         textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeightPx)}px`;
+    }
+
+    useEffect(() => {
+        resizeTextarea();
+    }, [value, maxHeightPx]);
+
+    function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+        onChange(e.currentTarget.value);
     }
     
     const isOverCharacterLimit = maxCharacters !== undefined && value.length > maxCharacters;
