@@ -12,6 +12,22 @@ services:
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
 
+  curatorsledger-cleanup:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    restart: unless-stopped
+    container_name: curatorsledger-cleanup
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    command: ["sh", "-c", "while true; do npm run cleanup:expired; sleep 3600; done"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   app:
     build:
       context: ..
