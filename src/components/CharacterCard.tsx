@@ -146,7 +146,7 @@ export default function CharacterCard({
     setIsSaving(true)
     setError(null)
     try {
-      const response = await fetch(`/api/characters?character=${encodeURIComponent(character.label)}`, {
+      const response = await fetch(`/api/characters/${encodeURIComponent(character.label)}`, {
         method: "DELETE",
       })
       if (!response.ok) {
